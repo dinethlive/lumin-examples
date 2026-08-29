@@ -1,0 +1,272 @@
+[
+  {
+    "id": "purple-white-bliss-bouquet",
+    "name": "Purple White Bliss Bouquet",
+    "category": "flowers",
+    "description": "A soft mixed bouquet of purple lisianthus and white roses arranged in elegant tissue.",
+    "price_lkr": 7800,
+    "traits": ["elegant", "warm", "nurturing"],
+    "hue": "#c8a4cf"
+  },
+  {
+    "id": "pastel-pink-peach-rose-vase",
+    "name": "Pastel Pink Peach Rose Vase",
+    "category": "flowers",
+    "description": "Two-dozen pastel roses arranged in a glass vase, a polished centerpiece.",
+    "price_lkr": 15750,
+    "traits": ["elegant", "luxurious", "warm"],
+    "hue": "#f0c0a8"
+  },
+  {
+    "id": "sunflower-sunshine-bouquet",
+    "name": "Sunflower Sunshine Bouquet",
+    "category": "flowers",
+    "description": "Bright sunflowers and yellow daisies, a bouquet that radiates cheer.",
+    "price_lkr": 6500,
+    "traits": ["celebratory", "warm", "playful"],
+    "hue": "#f5c84a"
+  },
+  {
+    "id": "anthurium-tropical-arrangement",
+    "name": "Anthurium Tropical Arrangement",
+    "category": "flowers",
+    "description": "Tropical anthuriums and orchids arranged in a wooden basket, a Sri Lankan signature.",
+    "price_lkr": 9200,
+    "traits": ["traditional", "elegant", "warm"],
+    "hue": "#c84a4a"
+  },
+  {
+    "id": "rosy-elegance-mothers-day-cake",
+    "name": "Rosy Elegance Ribbon Cake",
+    "category": "cakes",
+    "description": "A delicate vanilla sponge with rose-tinted buttercream, a Mother's Day favorite.",
+    "price_lkr": 5470,
+    "traits": ["nurturing", "warm", "traditional"],
+    "hue": "#e89bb2"
+  },
+  {
+    "id": "classic-chocolate-truffle-cake",
+    "name": "Classic Chocolate Truffle Cake",
+    "category": "cakes",
+    "description": "Three layers of dark chocolate sponge with rich truffle ganache.",
+    "price_lkr": 4200,
+    "traits": ["celebratory", "luxurious", "playful"],
+    "hue": "#5c3a28"
+  },
+  {
+    "id": "traditional-kiribath",
+    "name": "Traditional Milk Rice (Kiribath) Platter",
+    "category": "cakes",
+    "description": "Coconut milk rice cut into diamonds and served with seeni sambol, a classical Sri Lankan welcome.",
+    "price_lkr": 1800,
+    "traits": ["traditional", "homebody", "nurturing"],
+    "hue": "#f5ecd8"
+  },
+  {
+    "id": "vanilla-berry-birthday-cake",
+    "name": "Vanilla Berry Birthday Cake",
+    "category": "cakes",
+    "description": "Light vanilla sponge layered with fresh berries and whipped cream.",
+    "price_lkr": 4800,
+    "traits": ["celebratory", "playful", "warm"],
+    "hue": "#e7c4d4"
+  },
+  {
+    "id": "java-amma-chocolate-box",
+    "name": "Java I Love Amma 10pc Chocolate Box",
+    "category": "chocolates",
+    "description": "Ten artisan chocolates from Java's Mother's Day collection in a keepsake box.",
+    "price_lkr": 3420,
+    "traits": ["nurturing", "warm", "traditional"],
+    "hue": "#8a4a2a"
+  },
+  {
+    "id": "lindt-lindor-premium-box",
+    "name": "Lindt Lindor Premium Box",
+    "category": "chocolates",
+    "description": "Imported Lindt Lindor truffles in an elegant gift box.",
+    "price_lkr": 5800,
+    "traits": ["luxurious", "elegant", "celebratory"],
+    "hue": "#b8453a"
+  },
+  {
+    "id": "gerard-mendis-truffle-selection",
+    "name": "Gerard Mendis Truffle Selection",
+    "category": "chocolates",
+    "description": "Sri Lanka's premier chocolatier, a curated truffle box for connoisseurs.",
+    "price_lkr": 7600,
+    "traits": ["luxurious", "elegant", "intellectual"],
+    "hue": "#6e3a26"
+  },
+  {
+    "id": "chamathka-ruby-set",
+    "name": "Chamathka Alaana Ruby Studded Set",
+    "category": "jewelry",
+    "description": "Necklace and earrings set in 22-karat gold with ruby accents, heirloom quality.",
+    "price_lkr": 163000,
+    "traits": ["luxurious", "elegant", "celebratory"],
+    "hue": "#a82d3e"
+  },
+  {
+    "id": "giordano-couple-watches",
+    "name": "Giordano Couple Watches",
+    "category": "jewelry",
+    "description": "Matching his-and-hers steel watches, a timeless gift for partners.",
+    "price_lkr": 45000,
+    "traits": ["elegant", "luxurious", "practical"],
+    "hue": "#2e2a26"
+  },
+  {
+    "id": "silver-lotus-pendant",
+    "name": "Sterling Silver Lotus Pendant",
+    "category": "jewelry",
+    "description": "A delicate silver lotus pendant on a 18-inch chain, minimal and meaningful.",
+    "price_lkr": 8900,
+    "traits": ["elegant", "traditional", "warm"],
+    "hue": "#c0c0c8"
+  },
+  {
+    "id": "sanford-digital-air-fryer",
+    "name": "Sanford Digital Air Fryer",
+    "category": "electronics",
+    "description": "5-litre digital air fryer with eight presets, modern healthy cooking.",
+    "price_lkr": 18990,
+    "traits": ["practical", "homebody", "intellectual"],
+    "hue": "#2c2a26"
+  },
+  {
+    "id": "aklan-stand-fan",
+    "name": "Aklan Stand Fan",
+    "category": "electronics",
+    "description": "Three-speed quiet stand fan with oscillation, a household essential.",
+    "price_lkr": 9990,
+    "traits": ["practical", "homebody"],
+    "hue": "#b8b6b0"
+  },
+  {
+    "id": "innovex-mixer-grinder",
+    "name": "Innovex Mixer Grinder",
+    "category": "electronics",
+    "description": "Three-jar mixer grinder for everyday Sri Lankan cooking.",
+    "price_lkr": 15390,
+    "traits": ["practical", "homebody", "traditional"],
+    "hue": "#a04030"
+  },
+  {
+    "id": "rose-blossom-vessel-combo",
+    "name": "Rose Blossom Vessel Combo",
+    "category": "hampers",
+    "description": "Roses arranged in a ceramic vessel paired with a Cadbury chocolate selection.",
+    "price_lkr": 12500,
+    "traits": ["elegant", "celebratory", "warm"],
+    "hue": "#d4a5b8"
+  },
+  {
+    "id": "rose-breeze-wine-combo",
+    "name": "Rosé Breeze Wine Combo",
+    "category": "hampers",
+    "description": "A bottle of rosé paired with cheese, crackers, and chocolate, celebration in a basket.",
+    "price_lkr": 11150,
+    "traits": ["luxurious", "celebratory", "elegant"],
+    "hue": "#b89a9c"
+  },
+  {
+    "id": "grand-royal-celebration-hamper",
+    "name": "Grand Royal Celebration Hamper",
+    "category": "hampers",
+    "description": "An overflowing hamper of imported chocolates, biscuits, fine teas, and dried fruits.",
+    "price_lkr": 37000,
+    "traits": ["luxurious", "celebratory", "elegant"],
+    "hue": "#8a6a30"
+  },
+  {
+    "id": "sri-lankan-tea-sweets-hamper",
+    "name": "Sri Lankan Tea & Sweets Hamper",
+    "category": "hampers",
+    "description": "Dilmah teas paired with kavum, kokis, aluwa, and traditional Sri Lankan confections.",
+    "price_lkr": 6400,
+    "traits": ["traditional", "homebody", "nurturing"],
+    "hue": "#7a5638"
+  },
+  {
+    "id": "esmeralda-green-tea-set",
+    "name": "Esmeralda Green Tea Set",
+    "category": "home",
+    "description": "Six-piece bone-china tea set in deep green with gold rim, a centerpiece for the dining room.",
+    "price_lkr": 27200,
+    "traits": ["elegant", "traditional", "intellectual"],
+    "hue": "#5a7a4f"
+  },
+  {
+    "id": "luxury-wall-clock",
+    "name": "Luxury Wall Clock",
+    "category": "home",
+    "description": "Brass-rimmed analog wall clock with Roman numerals: quiet, considered, precise.",
+    "price_lkr": 18900,
+    "traits": ["elegant", "intellectual", "practical"],
+    "hue": "#b8a06c"
+  },
+  {
+    "id": "aroma-diffuser-candle-set",
+    "name": "Aroma Diffuser & Candle Set",
+    "category": "home",
+    "description": "Reed diffuser, two soy candles, and matchstick set in a wooden tray.",
+    "price_lkr": 4500,
+    "traits": ["homebody", "warm", "elegant"],
+    "hue": "#c4a574"
+  },
+  {
+    "id": "verde-luxe-chevron-clutch",
+    "name": "Verde Luxe Chevron Clutch",
+    "category": "fashion",
+    "description": "A sage-green quilted clutch with a slim gold chain, evening-ready.",
+    "price_lkr": 1680,
+    "traits": ["elegant", "playful"],
+    "hue": "#6a8e7c"
+  },
+  {
+    "id": "urban-edge-checkered-tote",
+    "name": "Urban Edge Checkered Tote",
+    "category": "fashion",
+    "description": "A roomy checkered canvas tote for laptops, books, and weekend errands.",
+    "price_lkr": 4930,
+    "traits": ["practical", "intellectual", "playful"],
+    "hue": "#4a4a4a"
+  },
+  {
+    "id": "rhea-geo-texture-wallet",
+    "name": "Rhea Geo Texture Wallet",
+    "category": "fashion",
+    "description": "A textured leather wallet with twelve card slots and a coin pouch.",
+    "price_lkr": 1530,
+    "traits": ["practical", "elegant"],
+    "hue": "#8a5e4a"
+  },
+  {
+    "id": "giant-teddy-bear",
+    "name": "Giant Teddy Bear",
+    "category": "toys",
+    "description": "A 4-foot ultra-soft plush teddy bear for all the comfort, all the time.",
+    "price_lkr": 5800,
+    "traits": ["warm", "playful", "nurturing"],
+    "hue": "#b89968"
+  },
+  {
+    "id": "stitch-duck-plush",
+    "name": "Stitch and Duck Plush Set",
+    "category": "toys",
+    "description": "Two collectible plush characters, a playful pair for the young at heart.",
+    "price_lkr": 5200,
+    "traits": ["playful", "warm"],
+    "hue": "#a4d0e3"
+  },
+  {
+    "id": "dilmah-premium-tea-selection",
+    "name": "Dilmah Premium Tea Selection",
+    "category": "food",
+    "description": "Twelve single-estate Ceylon teas in a wooden gift box, Dilmah at its finest.",
+    "price_lkr": 4200,
+    "traits": ["traditional", "intellectual", "homebody"],
+    "hue": "#5a3a2a"
+  }
+]

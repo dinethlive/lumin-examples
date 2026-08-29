@@ -1,0 +1,19 @@
+{
+  "name": "lumin-examples",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Open-source example apps built on the Lumin MCP server",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "check:tools": "node scripts/check-tool-names.mjs"
+  }
+}

@@ -1,0 +1,208 @@
+[
+  {
+    "id": "cardiovascular",
+    "label": "Cardiovascular",
+    "subtitle": "Heart, circulation, blood pressure",
+    "primary_planets": ["Sun", "Moon"],
+    "secondary_planets": ["Mars", "Saturn"],
+    "primary_signs": ["Leo", "Cancer"],
+    "primary_houses": [4, 5],
+    "ruling_karaka": "Sun (heart muscle, vitality, blood pulse)",
+    "common_concerns": [
+      "hypertension",
+      "arrhythmia",
+      "ischemic events",
+      "circulatory weakness",
+      "cholesterol imbalance"
+    ],
+    "aggravating_factors": [
+      "Sun debilitated in Libra or combust",
+      "Mars afflicting Sun or 4th cusp",
+      "Saturn in 4th house with malefic aspect",
+      "Moon in 6th, 8th, or 12th from Sun",
+      "Rahu-Ketu axis on 4th-10th"
+    ],
+    "hue": "#b34a3a"
+  },
+  {
+    "id": "respiratory",
+    "label": "Respiratory",
+    "subtitle": "Lungs, airways, breath",
+    "primary_planets": ["Mercury", "Moon"],
+    "secondary_planets": ["Jupiter", "Saturn"],
+    "primary_signs": ["Gemini", "Cancer"],
+    "primary_houses": [3, 4],
+    "ruling_karaka": "Mercury (bronchi, air exchange) and Moon (lung tissue)",
+    "common_concerns": [
+      "asthma",
+      "bronchitis",
+      "allergic rhinitis",
+      "COPD tendency",
+      "shortness of breath under stress"
+    ],
+    "aggravating_factors": [
+      "Mercury combust or in 6th, 8th, or 12th",
+      "Moon afflicted in air signs",
+      "Saturn aspecting 3rd or 4th cusp",
+      "Mars in 4th house",
+      "Rahu in Gemini or 3rd house"
+    ],
+    "hue": "#a47ca0"
+  },
+  {
+    "id": "digestive",
+    "label": "Digestive",
+    "subtitle": "Stomach, intestines, liver, gut",
+    "primary_planets": ["Moon", "Mercury"],
+    "secondary_planets": ["Jupiter", "Mars"],
+    "primary_signs": ["Cancer", "Virgo"],
+    "primary_houses": [5, 6],
+    "ruling_karaka": "Moon (stomach lining), Mercury (intestinal nerves), Jupiter (liver)",
+    "common_concerns": [
+      "acidity",
+      "IBS",
+      "ulcers",
+      "fatty liver",
+      "food sensitivities",
+      "irregular appetite"
+    ],
+    "aggravating_factors": [
+      "Moon afflicted in Cancer or 5th house",
+      "Mars in 5th aspecting 6th",
+      "Jupiter retrograde and weak",
+      "6th cusp sub-lord is Mars or Saturn in fire or earth signs",
+      "Rahu in 5th or 6th house"
+    ],
+    "hue": "#b8924e"
+  },
+  {
+    "id": "nervous-mental",
+    "label": "Nervous & Mental",
+    "subtitle": "Brain, nerves, sleep, stress response",
+    "primary_planets": ["Mercury", "Moon"],
+    "secondary_planets": ["Saturn", "Rahu"],
+    "primary_signs": ["Gemini", "Virgo"],
+    "primary_houses": [3, 5],
+    "ruling_karaka": "Mercury (nervous system), Moon (mind), Saturn (chronic stress)",
+    "common_concerns": [
+      "anxiety",
+      "insomnia",
+      "burnout",
+      "migraine",
+      "depressive episodes",
+      "neuralgia"
+    ],
+    "aggravating_factors": [
+      "Moon-Saturn conjunction or opposition",
+      "Mercury combust or retrograde and weak",
+      "Rahu conjunct Moon or in 5th",
+      "Moon in dark fortnight (krishna paksha) and weak",
+      "12th lord conjunct Moon (sleep disturbance)"
+    ],
+    "hue": "#6a7da3"
+  },
+  {
+    "id": "musculoskeletal",
+    "label": "Musculoskeletal",
+    "subtitle": "Bones, joints, spine, posture",
+    "primary_planets": ["Saturn", "Mars"],
+    "secondary_planets": ["Sun"],
+    "primary_signs": ["Capricorn", "Aquarius"],
+    "primary_houses": [10, 11],
+    "ruling_karaka": "Saturn (bones, joints, cartilage), Mars (muscle, ligaments)",
+    "common_concerns": [
+      "back pain",
+      "arthritis",
+      "frozen shoulder",
+      "knee degeneration",
+      "spinal compression",
+      "fractures from falls"
+    ],
+    "aggravating_factors": [
+      "Saturn debilitated in Aries or retrograde and afflicted",
+      "Mars conjunct Saturn",
+      "Saturn in 1st or 8th",
+      "Sun debilitated (low bone-marrow vitality)",
+      "Saturn-Rahu conjunction"
+    ],
+    "hue": "#8a7556"
+  },
+  {
+    "id": "endocrine-metabolic",
+    "label": "Endocrine & Metabolic",
+    "subtitle": "Thyroid, blood sugar, weight, hormones",
+    "primary_planets": ["Jupiter", "Venus"],
+    "secondary_planets": ["Moon", "Saturn"],
+    "primary_signs": ["Sagittarius", "Pisces", "Taurus"],
+    "primary_houses": [2, 9],
+    "ruling_karaka": "Jupiter (pancreas, liver, fat metabolism), Venus (kidneys, hormones)",
+    "common_concerns": [
+      "diabetes risk",
+      "hypothyroidism",
+      "obesity tendency",
+      "PCOS",
+      "metabolic syndrome",
+      "adrenal fatigue"
+    ],
+    "aggravating_factors": [
+      "Jupiter debilitated in Capricorn or retrograde and afflicted",
+      "Venus combust or in 6th, 8th, or 12th",
+      "Moon-Jupiter conjunction in water sign with affliction",
+      "Saturn aspecting Jupiter (slow metabolism)",
+      "Rahu in 2nd or 11th (sugar absorption)"
+    ],
+    "hue": "#6e8a6e"
+  },
+  {
+    "id": "reproductive-urinary",
+    "label": "Reproductive & Urinary",
+    "subtitle": "Kidneys, bladder, reproductive organs",
+    "primary_planets": ["Venus", "Mars"],
+    "secondary_planets": ["Moon", "Saturn"],
+    "primary_signs": ["Libra", "Scorpio"],
+    "primary_houses": [7, 8],
+    "ruling_karaka": "Venus (reproductive system, kidneys), Mars (urogenital, surgical events)",
+    "common_concerns": [
+      "kidney stones",
+      "UTIs",
+      "fertility challenges",
+      "menstrual irregularities",
+      "prostate issues",
+      "pelvic surgery"
+    ],
+    "aggravating_factors": [
+      "Venus afflicted in 6th, 8th, or 12th",
+      "Mars in 7th or 8th aspected by Saturn",
+      "8th cusp sub-lord is Mars or Ketu",
+      "Moon afflicted in Scorpio",
+      "Saturn-Mars conjunction"
+    ],
+    "hue": "#8b4a3e"
+  },
+  {
+    "id": "immune-vitality",
+    "label": "Immune & Vitality",
+    "subtitle": "Immunity, recovery, baseline energy",
+    "primary_planets": ["Sun", "Jupiter"],
+    "secondary_planets": ["Mars"],
+    "primary_signs": ["Leo", "Sagittarius"],
+    "primary_houses": [1, 8],
+    "ruling_karaka": "Sun (vitality, immune fire), Jupiter (recovery, regeneration), Lagna lord",
+    "common_concerns": [
+      "frequent infections",
+      "slow recovery",
+      "autoimmune tendency",
+      "chronic fatigue",
+      "low ojas",
+      "heightened susceptibility during transitions"
+    ],
+    "aggravating_factors": [
+      "Lagna lord weak, retrograde, or combust",
+      "Sun debilitated and not vargottama",
+      "Jupiter retrograde in 6th, 8th, or 12th",
+      "1st cusp sub-lord signifying 6, 8, or 12",
+      "Multiple planets in 6th, 8th, or 12th"
+    ],
+    "hue": "#d18a3a"
+  }
+]

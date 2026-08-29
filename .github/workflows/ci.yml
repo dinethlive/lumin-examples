@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tool-names:
+    name: Tool names exist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-tool-names.mjs
+
+  typecheck:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - wellness-matcher
+          - products-matcher
+          - health-risk-analyzer
+          - weather-windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck -w apps/${{ matrix.app }}
+      - run: npm run build -w apps/${{ matrix.app }}
+        env:
+          # Next inlines nothing secret here, but the build imports the route
+          # module, so the names have to resolve.
+          ANTHROPIC_API_KEY: build-placeholder
+          LUMIN_API_KEY: build-placeholder
