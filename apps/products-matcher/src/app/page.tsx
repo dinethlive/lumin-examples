@@ -61,9 +61,8 @@ function LoadingState() {
           One moment
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Computing your chart through Lumin&rsquo;s KP engine. This typically takes 20 to 45
-          seconds. Claude is calling several tools to map your planetary placements
-          to a consumer personality.
+          Computing your chart through Lumin&rsquo;s KP engine. This typically takes 30 to 100
+          seconds. Eleven tool calls map your planetary placements to a consumer personality.
         </p>
         <ul className="mt-5 space-y-1.5 text-sm text-muted-foreground">
           {LOADING_STEPS.map((step, i) => (
@@ -82,7 +81,7 @@ function ResultsSection({ result }: { result: MatchResponse }) {
   return (
     <section className="mx-auto max-w-5xl px-6 pb-24">
       <ResolvedLocationCaption resolved={result.resolved_location} />
-      <PersonalityCard personality={result.personality} />
+      <PersonalityCard personality={result.personality} disclaimer={result.disclaimer} />
 
       <div className="mt-10">
         <h2 className="font-serif text-2xl tracking-tight text-foreground md:text-3xl">

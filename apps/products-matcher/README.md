@@ -1,69 +1,98 @@
 # Products Matcher
 
-A Lumin example: a single-page widget that asks for a visitor's birth details and returns a personalized **consumer personality** read plus 5 product recommendations from a generalist e-commerce catalog (flowers, cakes, electronics, jewelry, fashion, hampers, home), with reasoning grounded in their actual KP/Vedic chart.
+A Lumin example: a single-page widget that reads a visitor's KP/Vedic chart and returns a
+**consumer personality** read plus 5 product recommendations from a generalist e-commerce
+catalog, with reasoning grounded in the chart rather than a generic quiz.
 
-Designed as a drop-in pattern for generalist e-commerce sites with broad catalogs (Kapruka, Daraz, FernsNPetals, Amazon-style marketplaces). The catalog is populated with 30 Kapruka-style products across nine categories. Fork it and swap your own SKUs.
+**Vertical:** generalist e-commerce sites with broad catalogs (Kapruka, Daraz, FernsNPetals,
+Amazon-style marketplaces). The catalog ships with 30 sample products across 10 categories
+(flowers, cakes, chocolates, jewelry, electronics, hampers, home, fashion, toys, food). Fork it and
+swap your own SKUs.
 
-## How it works
+<!-- screenshot: docs/products-matcher.png -->
 
-```
-Browser form (name, DOB, optional birth time, birth city as free text)
-  -> POST /api/match
-  -> Anthropic Messages API + mcp.lumin.guru attached
-  -> Claude resolves the city to lat/lng/UTC offset
-  -> Claude calls Lumin tools:
-       set_birth_profile, get_full_chart, get_planets, get_house_cusps,
-       get_nakshatra_details, get_aspects_and_strength,
-       get_boundary_warnings (sub-lord credibility check),
-       get_shadbala (six-fold planetary strength),
-       get_arudha_lagna (public image), get_chara_karakas (soul drive),
-       get_d2_chart (Hora / wealth-acquisition capacity)
-  -> Claude derives the visitor's consumer personality (warm / intellectual / luxurious / traditional / homebody / elegant / practical / celebratory / nurturing / playful)
-  -> Claude builds the chart signals: public image, core drive, strongest planet, spending capacity
-  -> Claude picks 5 catalog products that fit the personality
-  -> Server hydrates matches with full product data
-  -> Client renders a personality card with the chart signals + product grid
-```
+## What it wires
 
-The **business logic lives in the server-side prompt** (`src/lib/prompt.ts`): city resolution, planet to personality-trait mapping, catalog rules. The Lumin MCP tools stay generic. Same pattern as the sibling `wellness-matcher`, just a different mapping layer and a broader catalog.
+| Tool | What it contributes | System |
+|---|---|---|
+| `set_birth_profile` | Validates the birth inputs and returns the reading plan | KP |
+| `get_full_chart` | Ascendant, planets, dasha overview | KP |
+| `get_planets` | Detailed positions, dignities, retrograde flags | KP |
+| `get_house_cusps` | All 12 cusps with sign lord, star lord, sub lord | KP |
+| `get_nakshatra_details` | Moon nakshatra and pada | KP |
+| `get_aspects_and_strength` | Whole-sign aspect geometry and a 0-100 house strength score | Vedic Parashari, cross-system reference |
+| `get_boundary_warnings` | Sub-lord credibility check; a CRITICAL lagna flag downweights ascendant-driven traits | KP |
+| `get_shadbala` | Six-fold planetary strength, tests whether a "strong planet" trait claim is backed by strength or just placement | Vedic Parashari, cross-system reference |
+| `get_arudha_lagna` | The Arudha Lagna, the projected public image; drives the **Public image** chart signal | Jaimini, cross-system reference |
+| `get_chara_karakas` | The Atmakaraka, the soul's deepest craving; drives the **Core drive** signal | Jaimini, cross-system reference |
+| `get_d2_chart` | The D2 (Hora) divisional chart, wealth-acquisition capacity; drives the **Spending capacity** signal | Vedic Parashari, cross-system reference |
 
-### What the Lumin MCP catalog added
+Five of the eleven tools are not orthodox Krishnamurti Paddhati (KP): three Vedic Parashari, two
+Jaimini. The system prompt tags each one inline, and the four chart signals shown in the personality
+card (public image, core drive, strongest planet, spending capacity) name their system so a buyer
+sees a cross-system reading, never a KP finding presented as one. Roughly a third of the Lumin MCP
+server's surface is non-KP, so this discipline matters on almost every app built on it.
 
-The Lumin MCP grew from 78 tools (the May-2026 audit) to 144 in the v4 sweep, and has since grown to **~159 tools** (the session's live server). The v4 sweep added Jaimini and planetary-strength tools that DO fit consumer-personality work, and the prompt now wires four beyond the credibility check:
+## What it costs
 
-- `get_arudha_lagna` reads the Arudha Lagna, the projected public image, how the world perceives the visitor. This is the closest KP/Jaimini reading to a consumer-facing persona, and it drives the **Public image** chart signal.
-- `get_chara_karakas` returns the Jaimini chara karakas. The Atmakaraka, the planet at the highest degree within its sign, marks the soul's deepest craving, and it drives the **Core drive** signal.
-- `get_shadbala` gives the six-fold planetary strength. It backs the **Strongest planet** signal and lets the prompt test whether a "strong planet" claim in the trait mapping is actually carried by strength rather than mere placement.
-- `get_d2_chart` (the D2 / Hora divisional chart) reads wealth-acquisition capacity, each sign halved into a Sun hora (active earning, status spending) and a Moon hora (accumulation, value-mindedness). It drives the **Spending capacity** signal, grounding the premium-versus-practical lean in an actual chart factor rather than a guess. The hora split is longitude-based, so this signal survives the birth-time fallback.
-- `get_boundary_warnings` stays the Phase-1 credibility check: if the lagna is CRITICAL (within 6 arc-minutes of a sub-lord boundary), the model downweights ascendant-driven traits and leans more on Moon-sign and nakshatra signals.
+| Path | Calls per match |
+|---|---|
+| As shipped, all eleven tools | **11** |
+| Minimum useful matcher (`get_full_chart` and `get_planets` only, trait mapping from sign placements) | 2 |
 
-The trait mapping (planet to personality) still lives in the prompt; the new tools sharpen and audit it rather than replace it. The chart signals are surfaced in the personality card so a buyer can see the reading, not just the verdict. The brand-voice rule (no em dashes anywhere in model output or copy) is enforced in the prompt.
+The free plan is 300 tool calls per month per credential, so the shipped path runs about 27 matches
+a month on the free tier. The minimum path drops the credibility check and all four chart signals,
+leaving only the sign-placement trait mapping.
+
+## The detail worth copying
+
+**The business logic lives in the server-side prompt** (`src/lib/prompt.ts`): city resolution,
+planet-to-trait mapping, the four chart-signal sources, catalog rules. The Lumin tools stay generic.
+Same integration pattern as the sibling `wellness-matcher`, just a different mapping layer and a
+broader catalog.
+
+The form asks for a free-text birth city ("Colombo, Sri Lanka", "Mumbai", "London, UK"). The model
+resolves it to coordinates and the historical UTC offset from its own geographic knowledge, so the
+demo needs no separate geocoding API. The resolved coordinates are surfaced in the response so a
+visitor can verify the right city was used. For production traffic, swap in a real geocoding API
+(OpenCage, Google, Nominatim) before the Lumin call.
 
 ## Birth-time fallback
 
-Most e-commerce visitors don't know their exact birth time. The form lets them tick "I don't know my birth time": we default to 12:00 noon and the prompt instructs Claude to skip ascendant/cusp logic and rely on planet placements plus Moon nakshatra only. The summary explicitly notes the reduced precision.
+Most e-commerce visitors do not know their exact birth time. The form lets them tick "I don't know
+my birth time": the app defaults to 12:00 noon and the prompt skips ascendant and cusp logic,
+relying on planet placements plus Moon nakshatra only. `get_arudha_lagna` depends on the ascendant,
+so the Public image signal is skipped; Core drive and Spending capacity still work from planetary
+degrees and longitude; Strongest planet becomes approximate. The summary begins by saying so.
 
 ## Run it
 
 ```bash
-cp .env.example .env.local
-# Add ANTHROPIC_API_KEY=sk-ant-... to .env.local
-
+# from the repo root
 npm install
-npm run dev
-# http://localhost:3101
+cp apps/products-matcher/.env.example apps/products-matcher/.env.local
+# ANTHROPIC_API_KEY  your model key
+# LUMIN_API_KEY      from https://app.lumin.guru/developer
+
+npm run dev -w apps/products-matcher   # http://localhost:3101
 ```
 
-## Deploy
-
-Vercel-ready. Set `ANTHROPIC_API_KEY` in project env vars and import.
-
-## Customize for your brand
+## Make it yours
 
 1. Replace `src/data/catalog.json` with your own products (same schema).
-2. Edit `src/lib/prompt.ts` to adjust the planet→trait mapping or add brand voice.
+2. Edit `src/lib/prompt.ts` to adjust the planet-to-trait mapping or add your brand's voice.
 3. Restyle `src/app/globals.css` and `src/components/*` with your colors and typography.
-4. Optionally swap the authless MCP endpoint for `/mcp/auth` + an API key when usage exceeds 50 calls/day per IP.
+4. Add a personal timing layer: `get_smart_current_dasha` or `get_sublord_changes` would let a
+   product page say "favorable this week" without turning the app into a full reading.
+
+## The disclaimer it ships
+
+> A curiosity and personalization layer, not a financial or psychometric assessment. It blends a KP
+> chart read with Vedic Parashari and Jaimini cross-system references, named as such in the chart
+> signals above.
+
+It is mandated in the system prompt, validated as a required field when the response arrives, and
+rendered by `PersonalityCard` beneath the chart signals.
 
 ## License
 

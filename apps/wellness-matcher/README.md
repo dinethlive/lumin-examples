@@ -1,73 +1,104 @@
 # Wellness Matcher
 
-A Lumin example: a single-page widget that asks for a customer's birth details and returns a personalized **Ayurvedic prakriti** (Vata / Pitta / Kapha mix) plus 4 recommended products from an Ayurvedic personal-care catalog, with reasoning grounded in the customer's actual KP/Vedic chart.
+A Lumin example: a single-page widget that reads a customer's KP/Vedic chart and returns their
+**Ayurvedic prakriti** (a Vata / Pitta / Kapha mix) plus 4 recommended products from an Ayurvedic
+personal-care catalog, with reasoning grounded in the chart rather than a generic quiz.
 
-Designed as a drop-in pattern for D2C wellness brands (Spa Ceylon, Forest Essentials, Kama Ayurveda, Khadi, Just Herbs, etc.). The catalog is populated with 24 Ayurvedic products. Fork it and swap your own SKUs.
+**Vertical:** D2C wellness and Ayurvedic personal-care brands (Spa Ceylon, Forest Essentials, Kama
+Ayurveda, Khadi, Just Herbs, and similar). The catalog ships with 24 sample products across 5
+categories. Fork it and swap your own SKUs.
 
-## How it works
+<!-- screenshot: docs/wellness-matcher.png -->
 
-```
-Browser form (name, DOB, optional birth time, birth city as free text)
-  -> POST /api/match
-  -> Anthropic Messages API + mcp.lumin.guru attached
-  -> Claude resolves the city to lat/lng/UTC offset (Step 0 of the system prompt)
-  -> Claude calls Lumin tools:
-       set_birth_profile, get_full_chart, get_planets, get_house_cusps,
-       get_nakshatra_details, get_aspects_and_strength,
-       get_boundary_warnings (sub-lord credibility check),
-       get_ayurvedic_constitution (the dedicated prakriti tool),
-       get_shadbala (six-fold planetary strength)
-  -> Claude derives Ayurvedic prakriti from the engine's vata/pitta/kapha
-     percentage triple, cross-checks against classical correspondences,
-     ranks the constitution drivers by Shadbala strength, and picks 4
-     catalog products
-  -> Server hydrates matches with full product data
-  -> Client renders resolved location, a prakriti card with the dosha-balance
-     meter and constitution drivers, and the product grid
-```
+## What it wires
 
-The **business logic lives in the server-side prompt** (`src/lib/prompt.ts`): city resolution, planet to dosha mapping, prakriti weighting, catalog rules. The Lumin MCP tools stay generic. Same pattern works for any vertical: change the prompt, change the catalog, ship a new feature.
+| Tool | What it contributes | System |
+|---|---|---|
+| `set_birth_profile` | Validates the birth inputs and returns the reading plan | KP |
+| `get_full_chart` | Ascendant, planets, dasha overview | KP |
+| `get_planets` | Detailed positions, dignities, retrograde flags | KP |
+| `get_house_cusps` | All 12 cusps with sign lord, star lord, sub lord | KP |
+| `get_nakshatra_details` | Moon nakshatra and pada | KP |
+| `get_aspects_and_strength` | Whole-sign aspect geometry and a 0-100 house strength score | Vedic Parashari, cross-system reference |
+| `get_boundary_warnings` | Sub-lord credibility check; a CRITICAL flag within 6 arc-minutes warns the prakriti read may flip on a small correction | KP |
+| `get_ayurvedic_constitution` | The vata/pitta/kapha percentage triple, primary and secondary dosha. This app's own spine | Vedic Parashari, cross-system reference |
+| `get_shadbala` | Six-fold planetary strength (Sthana, Dig, Kala, Cheshta, Naisargika, Drik), used to judge which dosha-carrying planet is genuinely strong | Vedic Parashari, cross-system reference |
 
-### What v4 of the Lumin MCP added
+Three of the nine tools are Vedic Parashari, not orthodox Krishnamurti Paddhati (KP), including the
+app's own spine, `get_ayurvedic_constitution`. The system prompt tags each one inline and the
+summary the model writes names them as a cross-system reading shown beside the KP layer, never as
+a KP finding. Roughly a third of the Lumin MCP server's surface is non-KP, so this discipline
+matters on almost every app built on it, not just this one.
 
-The Lumin MCP grew from 78 tools (the May-2026 audit) to 144 in the v4 sweep, and has since grown to **~159 tools** (the session's live server). This example wires the prakriti-relevant subset:
+One deliberate omission: **`check_doshas` is not wired here.** It is a Vedic Parashari tool but it
+detects classical chart afflictions (Manglik, Kalsarpa, Sadhe Sati, Pitra Dosha, Kemadruma), not
+Ayurvedic constitution, so despite the name it would pull marriage-and-karma signals into a
+constitution read. The health-oriented tools (`get_health_organ_panel`, `get_chronic_disease_panel`)
+are out of scope here too: too clinical for a discussion-starter. The sibling `health-risk-analyzer`
+is the right home for those.
 
-- `get_ayurvedic_constitution` is the PRIMARY signal. It maps planets to doshas (Saturn/Rahu/Mercury to Vata, Sun/Mars/Ketu to Pitta, Moon/Jupiter/Venus to Kapha), weights by house importance and lagna-element bonus, and returns a vata/pitta/kapha percentage triple summing to 100, primary plus secondary dosha, prakritiCombo (single / dual / TRIDOSHIC), and per-planet contributions. The percentage triple is now surfaced in the UI as a dosha-balance meter, not discarded.
-- `get_shadbala` (v4 Tier-B) adds the six-fold planetary strength (Sthana, Dig, Kala, Cheshta, Naisargika, Drik). The prompt crosses it with the engine's per-planet dosha contributions to rank the **constitution drivers**: a dosha-carrying planet that is also strong by Shadbala is a firm driver; one that is weak is a softer lean. When the strongest dosha contributor is weak, the summary says so, because it means the constitution is less fixed than the triple alone suggests.
-- `get_boundary_warnings` is Phase-1 mandatory. CRITICAL flags (within 6 arc-minutes of a sub-lord boundary) tell the prompt that a small ayanamsa or birth-time correction would flip the sub-lord and invert the prakriti; the model downweights confidence accordingly.
-- The prompt keeps the HYBRID DISCUSSION STARTER framing: output is a supplementary lens, not a clinical Ayurvedic prakriti reading and not standalone health advice.
+## What it costs
 
-### Why no new tools in the post-v4 review
+| Path | Calls per match |
+|---|---|
+| As shipped, all nine tools | **9** |
+| Minimum useful matcher (`get_full_chart` and `get_ayurvedic_constitution` only) | 2 |
 
-The catalog's growth past v4 was reviewed against this app, and the prakriti tool set is deliberately unchanged. `get_ayurvedic_constitution` remains the only engine tool that returns the Vata/Pitta/Kapha triple, and it is already the spine of the read. One name is a deliberate trap worth flagging: **`check_doshas` is NOT Ayurvedic**. It detects classical *chart* afflictions (Manglik, Kalsarpa, Sadhesati, Pitra Dosha, Kemadruma), so wiring it here would pull marriage-and-karma signals into a constitution read. The health-oriented additions (`get_health_organ_panel`, `get_chronic_disease_panel`) are also out of scope for a personal-care brand: too clinical for a discussion-starter. The sibling `health-risk-analyzer` is the right home for those.
+The free plan is 300 tool calls per month per credential, so the shipped path runs about 33 matches
+a month on the free tier. Dropping to the minimum path trades away the credibility check, the
+Shadbala-ranked constitution drivers, and most of the KP foundation, but still returns a real
+prakriti read.
 
-The form asks for a free-text birth city ("Colombo, Sri Lanka", "Mumbai", "Brooklyn, NY"). Claude resolves it to coordinates and the historical UTC offset using its built-in geographic knowledge: no separate geocoding API needed for the demo. The resolved coordinates are surfaced in the response so the user can verify Claude got the right city. For production traffic where reliability matters more than simplicity, swap in a real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
+## The detail worth copying
+
+**The business logic lives in the server-side prompt** (`src/lib/prompt.ts`): city resolution,
+planet-to-dosha mapping, prakriti weighting, catalog rules. The Lumin tools stay generic. The same
+pattern works for any vertical: change the prompt, change the catalog, ship a new feature.
+
+The form asks for a free-text birth city ("Colombo, Sri Lanka", "Mumbai", "Brooklyn, NY"). The model
+resolves it to coordinates and the historical UTC offset from its own geographic knowledge, so the
+demo needs no separate geocoding API. The resolved coordinates are surfaced in the response so a
+visitor can verify the right city was used. For production traffic, swap in a real geocoding API
+(OpenCage, Google, Nominatim) before the Lumin call.
 
 ## Birth-time fallback
 
-Most e-commerce visitors don't know their exact birth time. The form lets them tick "I don't know my birth time": we default to 12:00 noon and the prompt instructs Claude to skip ascendant/cusp logic and rely on planet placements plus Moon nakshatra only. The get_ayurvedic_constitution percentage triple still returns, but its lagna-element bonus and 1H weighting become unreliable; the summary explicitly notes the reduced precision.
+Most e-commerce visitors do not know their exact birth time. The form lets them tick "I don't know
+my birth time": the app defaults to 12:00 noon and the prompt skips ascendant and cusp logic,
+relying on planet placements plus Moon nakshatra only. `get_ayurvedic_constitution` still returns a
+result, but its lagna-element bonus and 1st-house weighting become unreliable, and the summary
+begins by saying so.
 
 ## Run it
 
 ```bash
-cp .env.example .env.local
-# Add ANTHROPIC_API_KEY=sk-ant-... to .env.local
-
+# from the repo root
 npm install
-npm run dev
-# http://localhost:3100
+cp apps/wellness-matcher/.env.example apps/wellness-matcher/.env.local
+# ANTHROPIC_API_KEY  your model key
+# LUMIN_API_KEY      from https://app.lumin.guru/developer
+
+npm run dev -w apps/wellness-matcher   # http://localhost:3100
 ```
 
-## Deploy
-
-Vercel-ready. Set `ANTHROPIC_API_KEY` in project env vars and import.
-
-## Customize for your brand
+## Make it yours
 
 1. Replace `src/data/catalog.json` with your own products (same schema).
-2. Edit `src/lib/prompt.ts` to adjust the planet→dosha mapping or add brand voice.
+2. Edit `src/lib/prompt.ts` to adjust the planet-to-dosha mapping or add your brand's voice.
 3. Restyle `src/app/globals.css` and `src/components/*` with your colors and typography.
-4. Optionally swap the authless MCP endpoint for `/mcp/auth` + an API key when usage exceeds 50 calls/day per IP.
+4. Add a personal timing layer: `get_smart_current_dasha` or `get_sublord_changes` would let a
+   product page say "favorable this week" without turning the app into a full reading.
+
+## The disclaimer it ships
+
+> A hybrid discussion starter, not a clinical Ayurvedic prakriti reading and not standalone health
+> advice. It is a supplementary lens only, blending a KP chart read with the Vedic Parashari
+> `get_ayurvedic_constitution` mapping.
+
+It is mandated in the system prompt, validated as a required field when the response arrives, and
+rendered by `PrakritiCard` beneath the constitution drivers. Naming the cross-system blend inside the
+disclaimer itself, not just in the tool table above, is deliberate: a visitor who never reads the
+README still sees that this is not a pure KP verdict.
 
 ## License
 

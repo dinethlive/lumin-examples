@@ -1,91 +1,102 @@
 # Health Risk Analyzer
 
-A Lumin example: a single-page widget that reads a person's KP/Vedic chart and returns a **constitutional health risk profile** across eight body systems, with a vitality index, peak vulnerability windows, surgery and recovery timing, and a screening calendar.
+A Lumin example: a single-page widget that reads a person's KP/Vedic chart and returns a
+**constitutional health risk profile** across eight body systems, with a vitality index, peak
+vulnerability windows, surgery and recovery timing, and a screening calendar.
 
-Designed as a drop-in pattern for **integrative medicine clinics, telehealth apps, corporate wellness platforms, insurance underwriters, and Ayurvedic chains** where a structured, prevention-oriented risk read complements actual screening. The 8-system mapping is populated with KP karaka logic. Fork it and extend the systems or re-skin for your brand.
+**Vertical:** integrative medicine clinics, telehealth apps, corporate wellness platforms, insurance
+underwriters, and Ayurvedic chains, where a structured, prevention-oriented risk read complements
+actual screening. The 8-system mapping runs on KP karaka logic. Fork it and extend the systems or
+re-skin for your brand.
 
-## How it works
+<!-- screenshot: docs/health-risk-analyzer.png -->
 
-```
-Browser form (name, DOB, optional birth time, birth city as free text, biological sex)
-  -> POST /api/analyze
-  -> Anthropic Messages API + mcp.lumin.guru attached
-  -> Claude resolves the city to lat/lng/UTC offset
-  -> Claude calls around 29 Lumin tools across a 7-step KP protocol:
-     Phase 1 chart foundation:
-       set_birth_profile, get_full_chart, get_planets, get_house_cusps,
-       get_nakshatra_details, get_aspects_and_strength,
-       run_pre_verdict_audit (chart-integrity gate: boundary, combustion,
-         planetary war, and vargottama in one pass)
-     Phase 2 + specialty tools:
-       analyze_natal_promise,
-       get_significators (4-level house-signification matrix that grounds
-         every "planet that signifies 6/8/12" claim),
-       get_multi_system_verdict (4-school consensus for chronic-illness and
-         surgery verdicts), get_bhadhakasthana, get_csl_advanced,
-       get_smart_current_dasha, get_dasha_periods,
-       get_vedha_transit (Saturn/Jupiter transit favourability from natal
-         Moon, the engine-backed peak-window trigger),
-       get_medical_timing, get_ashtakavarga,
-       get_shadbala (six-fold planetary strength),
-       get_chronic_disease_panel (8-condition watch-decade scoring),
-       get_health_organ_panel (sign-to-body-region affliction map),
-       get_accident_window (vehicular/workplace/surgical/assault/generic),
-       get_longevity_balarishta (qualitative lifespan band, no death dates),
-       get_sade_sati_phases (Saturn 7.5-year cycle),
-       get_sade_sati_intensity (sub-lord intensity peaks within the phase),
-       get_ayurvedic_constitution (Vata/Pitta/Kapha hybrid lens),
-       get_oncology_timing (conditional, when oncology is relevant),
-       get_d6_chart / get_d8_chart / get_d30_chart (disease, longevity,
-         and mind divisional charts that corroborate the main read)
-  -> Claude derives:
-       • vitality index (0-100, robust/balanced/fragile), downweighted by
-         lifespan band and bhadhaka-maraka overlap
-       • chart confidence (high/moderate/low + modifier) from the audit
-       • constitutional basis (ascendant, lagna lord, Moon, dasha) with a
-         Vata/Pitta/Kapha prakriti note
-       • chronicity profile (acute / chronic / mixed)
-       • 8 body-system risk cards informed by the chronic-disease panel
-       • a body-region panel (top afflicted regions) from the organ panel
-       • the Saturn cycle (Sade Sati phase and window)
-       • surgery windows enriched with SURGICAL accident-class peaks,
-         recovery periods
-       • screening calendar (3-6 lab/imaging entries)
-  -> Server hydrates risks with system metadata
-  -> Client renders vitality dashboard + 8-card risk grid + body-region
-     panel + timeline + screening calendar
-```
+## What it wires
 
-The **business logic lives in the server-side prompt** (`src/lib/prompt.ts`): KP house framework, planet to disease karaka mapping, sign to body-part Kaalpurusha mapping, severity banding, screening rationale. The Lumin MCP tools stay generic. Same pattern as `wellness-matcher` and `products-matcher`, scaled to a multi-card clinical dashboard.
+31 tool calls across a 7-step protocol.
 
-### What the v4 sweep added
+| Tool | What it contributes | System |
+|---|---|---|
+| `set_birth_profile` | Validates inputs, returns the reading plan | KP |
+| `get_full_chart` | Ascendant, planets, dasha overview | KP |
+| `get_planets` | Exact positions, retrograde, combustion, dignities | KP |
+| `get_house_cusps` | All 12 cusps; 1st, 6th, 8th, 11th, 12th sub lords are the health-critical set | KP |
+| `get_nakshatra_details` | Moon nakshatra and pada | KP |
+| `get_aspects_and_strength` | House strength scores | Vedic Parashari, cross-system reference |
+| `run_pre_verdict_audit` | Chart-integrity gate: boundary, combustion, planetary war, vargottama in one pass, feeds `chart_confidence` | KP |
+| `analyze_natal_promise` | Verdict for health, longevity, chronic-disease life events. **Paged.** | KP |
+| `get_significators` | The 4-level house-signification matrix behind every "signifies 6/8/12" claim | KP |
+| `get_multi_system_verdict` | 4-school consensus (KP CSL, KCIL, 4-Step, Bosmia) for Chronic Illness and Surgery | KP-extended |
+| `get_bhadhakasthana` | The lagna-mobility-driven blockage house | KP |
+| `get_csl_advanced` | Deep CSL chain for cusps 1, 6, 8, 12 | KP |
+| `get_smart_current_dasha` | Current Mahadasha, Antardasha, Pratyantardasha | KP |
+| `get_dasha_periods` | Full Vimshottari for the next 25 years | KP |
+| `get_ruling_planets` | The KP timing-verification set (ascendant and Moon sign/star/sub lord, day lord) | KP |
+| `get_fruitful_significators` | Significator matrix intersected with ruling planets, per event, meaning only these can deliver it | KP |
+| `get_transit_timing_hierarchy` | Saturn-to-Moon transit cascade, opens a window only where a fruitful significator's star and sub lord align | KP |
+| `get_medical_timing` | Surgery windows, recovery-versus-chronic differentiation | KP |
+| `get_ashtakavarga` | Bindus on houses 1, 6, 8 for longevity strength | Vedic Parashari, cross-system reference |
+| `get_chronic_disease_panel` | 8-condition watch-decade panel. **Paged.** | KP |
+| `get_health_organ_panel` | Sign-to-body-region affliction map, the engine-backed Kaalpurusha panel | Vedic Parashari, cross-system reference |
+| `get_accident_window` | Risk windows by class (vehicular, workplace, surgical, assault, generic) | KP |
+| `get_longevity_balarishta` | Qualitative lifespan band, never a date or a number of years | KP |
+| `get_sade_sati_phases` | Saturn's 7.5-year transit cycle. **Paged.** | KP |
+| `get_sade_sati_intensity` | Sub-lord-resolved intensity peaks within the Sade Sati phase | KP |
+| `get_ayurvedic_constitution` | Vata/Pitta/Kapha triple, feeds a one-line prakriti note | Vedic Parashari, cross-system reference |
+| `get_oncology_timing` | Conditional: body-part risk and recurrence-versus-cure, only when the intake or chart points there | KP |
+| `get_d6_chart` | Shashtamsa, the classical companion to the chronic-disease panel | Vedic Parashari, cross-system reference |
+| `get_d8_chart` | Ashtamsa, the companion to the lifespan band | Vedic Parashari, cross-system reference |
+| `get_d30_chart` | Trimsamsa, corroborates the nervous-mental score | Vedic Parashari, cross-system reference |
 
-The Lumin MCP grew from 78 tools (the May-2026 audit) to 144 in the v4 sweep, and has since grown to **~159 tools** (the session's live server). The May-2026 health tools are still the spine of this example:
+Nine of the 31 tools are not orthodox KP: eight Vedic Parashari, one KP-extended. The system prompt
+tags every one of them inline and instructs the model to attribute any finding drawn from them
+accordingly, never as a KP verdict. Health astrology draws heavily on Parashari technique in the
+classical texts, so this is close to a third of the app's own tool set, not an edge case.
 
-- `get_chronic_disease_panel`: 8 chronic conditions (cardiac, diabetes, kidney, liver, neurological, mental-health, respiratory, skeletal) each with a 0-100 signature score, severity band, and watch-decade dasha periods. The model feeds these scores DIRECTLY into the matching system_risks entries.
-- `get_accident_window`: risk windows by class with severity bands. SURGICAL windows enrich `surgery_windows`; VEHICULAR/WORKPLACE/ASSAULT inform musculoskeletal and immune-vitality peaks.
-- `get_longevity_balarishta`: qualitative lifespan band (SHORT / MIDDLE / LONG / INDETERMINATE) plus ranked critical windows. NEVER predicts death dates or moments by design; the band downweights the vitality index when applicable.
-- `get_ayurvedic_constitution`: Vata/Pitta/Kapha percentage triple plus primary-secondary dosha; written into `constitutional_basis.notes` as a one-line prakriti hint.
-- `get_oncology_timing`: conditional, only when the user mentions cancer or the chart shows a Saturn-Rahu/Jupiter-Rahu cluster on 6/8/12. Returns body-part risk and recurrence-vs-cure verdict.
+## `get_vedha_transit` was removed, and replaced with the orthodox KP chain
 
-The v4 sweep adds five more tools and three divisional charts, each surfaced in the UI:
+The earlier build used `get_vedha_transit` as its mandatory timing trigger and described it in the
+prompt as "the KP Reader 5 transit rules." That framing did not survive a check against the tool
+taxonomy: `get_vedha_transit` reads the traditional Hindu Gochara transit-obstruction rule, and the
+taxonomy tags it Vedic Parashari for a specific, sourced reason. KP Reader 5 itself heads that
+chapter "HINDU SYSTEM," records K.S. Krishnamurti's own dissent on the page ("Here I differ from
+them... Their method of judgement is wrong"), and closes by calling the Gochara system "useless,
+meaningless and not universally applicable." The book goes on to warn that an author who reproduces
+the traditional dicta without that caveat does harm.
 
-- `run_pre_verdict_audit` replaces the standalone boundary check. It bundles the sub-lord boundary warnings, combustion, planetary war, and vargottama strength into one pass and returns a confidence band and modifier, rendered as the chart-confidence pill on the vitality card.
-- `get_health_organ_panel` scores each zodiac sign to a body region (the Kaalpurusha map) 0 to 100. It drives the new body-region panel card, the engine-backed version of the sign-to-body-part logic that used to live only in the prompt.
-- `get_shadbala` adds six-fold planetary strength so an "afflicted" planet is judged genuinely weak, not merely placed in a difficult house. It tempers the vitality index.
-- `get_sade_sati_phases` reads Saturn's 7.5-year transit cycle, a major health-stress window, surfaced as the Saturn-cycle block in the timeline.
-- `get_d6_chart`, `get_d8_chart`, and `get_d30_chart` are the divisional charts for disease, longevity, and the mind; the model reads them to corroborate the chronic-disease, lifespan, and nervous-mental findings.
+Using a rule the source book calls useless as the gating trigger for a health app's `peak_window`
+claims was the wrong call, not a labeling nit, so it was replaced rather than relabeled. The
+timing trigger is now the orthodox KP transit chain: `get_ruling_planets` (the timing-verification
+set) feeds `get_fruitful_significators` (the significator matrix intersected with ruling planets,
+per event), which feeds `get_transit_timing_hierarchy` (the Saturn-to-Moon cascade, which only opens
+a window where a fruitful significator's star and sub lord line up, per KP Reader 5 canon p.195,
+the same book, its own methodology). That is three tool calls in place of one, which is why the
+tool count moved from 29 to 31. Relabeling `get_vedha_transit` as a cross-system reference and
+keeping it as a secondary signal was the other option on the table; it was set aside because the
+app calls it the *mandatory* trigger, and a discredited rule should not gate a claim regardless of
+how clearly it is labeled.
 
-`get_bhadhakasthana` (the lagna-mobility-driven blockage house) remains threaded through every health-blockage discussion.
+## What it costs
 
-### What the post-v4 catalog added
+| Path | Calls per analysis |
+|---|---|
+| As shipped, all 31 tools, no oncology branch | **30** |
+| As shipped, oncology branch triggered | **31** |
+| Minimum useful profile (`get_full_chart`, `analyze_natal_promise`, `get_chronic_disease_panel`) | 3, plus 1 per extra page |
 
-Four tools from the growth past v4 close gaps the prompt used to reason about unaided:
+The free plan is 300 tool calls per month per credential, so the shipped path runs about 9 to 10
+analyses a month on the free tier before the pack balance is drawn. This is the heaviest app in the
+set by design: a clinical-adjacent read earns the depth a 20-plus call floor buys.
 
-- `get_significators` is the KP 4-level house-signification matrix (L1 planet in the star of a house occupant, through L4 planet as cusp lord). It is the engine-backed source for every "planet that signifies 6/8/12" statement the timing rules lean on, so the model pulls the disease-house significators once and reuses them.
-- `get_vedha_transit` reads Saturn and Jupiter transit favourability from the natal Moon (KP Reader 5: Saturn favourable in 3/6/11, Jupiter in 2/5/7/9/11, each with its Vedha obstruction house). It is the transit trigger that turns a latent dasha vulnerability into a peak window. The prompt now grounds every `peak_window` trigger in this verdict instead of asserting a transit from memory.
-- `get_sade_sati_intensity` resolves the Sade Sati phase down to a sub-lord intensity timeline (Saturn-in-sub-of-Saturn = peak, sub-of-Jupiter = relief). It fills the new `intensity`, `peak_window`, and `peak_theme` fields on the Saturn-cycle block, rendered as a peak-intensity meter on the timeline.
-- `get_multi_system_verdict` returns a 4-school consensus (orthodox KP CSL, KCIL, 4-Step, Bosmia) for events such as Chronic Illness and Surgery. A SPLIT or MIXED consensus tells the model to state a finding softly; a STRONG or UNANIMOUS verdict lets it state it more firmly, and it folds into the chart-confidence summary.
+## Paging is a correctness requirement here, not an optimization
+
+`analyze_natal_promise`, `get_chronic_disease_panel`, and `get_sade_sati_phases` are all paged. The
+rows this protocol asks about by name, chronic illness, mental health, accident, and hospitalization,
+can sit on page 2, 3, or 4. The prompt instructs the model to read `pagination.totalItems` and
+`pageNote` after every call to these three tools and to keep paging until the row it needs is found
+or the pages run out, and it forbids writing "not exposed in the matrix" from a single page. In most
+apps a page you skip is a payload you saved. Here it is a promise the reading never checked, which
+in a health context reads as false reassurance rather than a shorter answer.
 
 ## The 8 body systems
 
@@ -100,45 +111,55 @@ Four tools from the growth past v4 close gaps the prompt used to reason about un
 | Reproductive & Urinary | Venus, Mars | 7, 8 |
 | Immune & Vitality | Sun, Jupiter | 1, 8 |
 
-Each system carries a list of aggravating chart factors that the prompt instructs Claude to look for. The output severity is banded: 0 to 29 low, 30 to 54 moderate, 55 to 74 elevated, 75 to 100 high.
-
-## Why this is interesting for B2B
-
-- Western medicine often catches diseases late. Constitutional astrology offers a complementary screening prompt, "where is the chart structurally weak, and when is exposure highest?", that clinicians can pair with actual labs.
-- The output is **structured JSON** (not a chat blob), so it slots into existing EHR overlays, intake widgets, or wellness dashboards.
-- The screening calendar pre-formats lab requests with rationale, so a physician can review and order without rebuilding the case from scratch.
-- Vertical white space: corporate wellness platforms in 2026 use AI but no astrology layer. Ayurvedic chains have constitution mapping but no time-axis (peak windows). KP delivers both.
+Each system carries a list of aggravating chart factors the prompt looks for. Severity is banded:
+0 to 29 low, 30 to 54 moderate, 55 to 74 elevated, 75 to 100 high.
 
 ## Birth-time fallback
 
-Most users don't know their exact birth time. The form lets them tick "I don't know my birth time", then we default to 12:00 noon and the prompt instructs Claude to skip ascendant-derived analysis (1st cusp CSL, Lagna lord-based vitality) and lean on planetary placements plus Moon nakshatra plus dasha (which is Moon-driven and works without exact time). The vitality index loses about 15 points of confidence in this mode and the constitutional notes flag the limitation.
+Most people do not know their exact birth time. The form lets them tick "I don't know my birth
+time": the app defaults to 12:00 noon and the prompt skips ascendant-derived analysis (1st cusp CSL,
+Lagna-lord vitality), leaning on planetary placements, nakshatra, and dasha (Moon-driven, so it
+works without an exact time). `get_significators`, `get_multi_system_verdict`,
+`get_fruitful_significators`, and `get_transit_timing_hierarchy` all lean on the cusps, so they
+become approximate; `get_sade_sati_intensity` is computed from the natal Moon and stays reliable.
+The vitality index loses about 15 points of confidence and the constitutional notes say so.
 
 ## Run it
 
 ```bash
-cp .env.example .env.local
-# Add ANTHROPIC_API_KEY=sk-ant-... to .env.local
-
+# from the repo root
 npm install
-npm run dev
-# http://localhost:3102
+cp apps/health-risk-analyzer/.env.example apps/health-risk-analyzer/.env.local
+# ANTHROPIC_API_KEY  your model key
+# LUMIN_API_KEY      from https://app.lumin.guru/developer
+
+npm run dev -w apps/health-risk-analyzer   # http://localhost:3102
 ```
 
-## Deploy
+## Make it yours
 
-Vercel-ready. Set `ANTHROPIC_API_KEY` in project env vars and import. `maxDuration` is set to 180s on the API route to accommodate the tool set, around 29 calls (typical run: 60 to 150s).
-
-## Customize for your vertical
-
-1. Adjust `src/data/body-systems.json`. Add a system, change the karaka weighting, swap the hue per brand. Keep the schema (`primary_planets`, `primary_signs`, `primary_houses`, `aggravating_factors`).
-2. Edit `src/lib/prompt.ts`. Tighten the severity banding, add more screening tests, adjust the disclaimer to match your jurisdiction's clinical disclosure rules.
+1. Adjust `src/data/body-systems.json`. Add a system, change the karaka weighting, swap the hue per
+   brand. Keep the schema (`primary_planets`, `primary_signs`, `primary_houses`,
+   `aggravating_factors`).
+2. Edit `src/lib/prompt.ts`. Tighten the severity banding, add more screening tests, adjust the
+   disclaimer to match your jurisdiction's clinical disclosure rules.
 3. Restyle `src/app/globals.css` and `src/components/*` with your colors and typography.
-4. Swap the authless MCP endpoint for `/mcp/auth` plus an API key when usage exceeds 50 calls/day per IP.
-5. For clinical deployments, replace the front-end intake with your existing EHR or patient form, and post the JSON output into your physician dashboard.
+4. For clinical deployments, replace the front-end intake with your existing EHR or patient form,
+   and post the JSON output into your physician dashboard.
 
-## Important: clinical disclaimer
+## The disclaimer it ships
 
-This is a **supplementary lens, not diagnostic** and never a substitute for medical evaluation. Every elevated or high finding should be discussed with a qualified physician who can order appropriate tests. The longevity output is a qualitative band only; this app NEVER predicts death dates or moments by design (per the May-2026 Anthropic-directory audit gates). The disclaimer text is enforced server-side and surfaced in the UI on every result.
+> This is a supplementary lens derived from the KP horoscope, not diagnostic and never a substitute
+> for medical evaluation. Use it as a screening prompt: every elevated or high finding should be
+> discussed with a qualified physician who can order appropriate tests. Longevity output is a
+> qualitative band only and never a death-date prediction. Oncology, chronic-disease, accident, and
+> Ayurvedic outputs are all supplementary lenses, not clinical findings.
+
+It is mandated in the system prompt, validated as a required field when the response arrives, and
+rendered by `DisclaimerBanner` on every result. The longevity band is enforced as qualitative only
+at three layers: the prompt says never a date or a number of years, the system prompt names the
+exact valid bands, and the disclaimer repeats the constraint so it survives even if a field is
+misread downstream.
 
 ## License
 

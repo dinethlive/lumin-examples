@@ -64,6 +64,8 @@ export type MatchResponse = {
   resolved_location: ResolvedLocation;
   personality: Personality;
   matches: Array<Match & Product>;
+  /** Mandated in the prompt, validated on arrival, rendered by PersonalityCard. */
+  disclaimer: string;
 };
 
 export type BiologicalSex = "female" | "male" | "unspecified";

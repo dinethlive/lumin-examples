@@ -68,10 +68,10 @@ function LoadingState() {
           Reading the sky
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Computing the KP astrometeorology signature through Lumin&rsquo;s engine. This
-          typically takes 40 to 90 seconds. Claude is calling the seasonal-outlook,
-          weather-windows, current-snapshot, and (for monsoon regions) monsoon-onset
-          tools, then scoring each lunation window.
+          Computing the KP-extended astrometeorology signature through Lumin&rsquo;s engine. This
+          typically takes 40 to 90 seconds: the seasonal-outlook, weather-windows,
+          current-snapshot, and (for monsoon regions) monsoon-onset tools, then scoring each
+          lunation window.
         </p>
         <ul className="mt-5 space-y-1.5 text-sm text-muted-foreground">
           {LOADING_STEPS.map((step, i) => (

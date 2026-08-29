@@ -40,21 +40,44 @@ export function IntakeForm({ onResult, onLoadingChange, onError, loading }: Prop
 
     onError(null);
     onLoadingChange(true);
+
+    // Matched to the route's maxDuration, so a hung request cannot spin forever.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 180_000);
+
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
-      const data = await res.json();
+
+      // Check ok BEFORE parsing. A platform timeout returns HTML, and calling
+      // .json() on HTML throws "Unexpected token '<'", which is what a user
+      // would otherwise be shown instead of the real failure.
       if (!res.ok) {
-        onError(data.error ?? `Request failed (${res.status})`);
+        let message = `Request failed (${res.status})`;
+        try {
+          const data = (await res.json()) as { error?: string };
+          if (data.error) message = data.error;
+        } catch {
+          // Body was not JSON, most likely a platform error page. Keep the
+          // status-based message above.
+        }
+        onError(message);
         return;
       }
-      onResult(data as AnalysisResponseHydrated);
+
+      onResult((await res.json()) as AnalysisResponseHydrated);
     } catch (err) {
-      onError((err as Error).message);
+      onError(
+        (err as Error).name === "AbortError"
+          ? "That took too long. Try again."
+          : (err as Error).message,
+      );
     } finally {
+      clearTimeout(timeout);
       onLoadingChange(false);
     }
   }

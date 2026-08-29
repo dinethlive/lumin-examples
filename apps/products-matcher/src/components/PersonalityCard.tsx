@@ -13,7 +13,13 @@ const TRAIT_DESCRIPTIONS: Record<PersonalityTrait, string> = {
   playful: "Light-hearted, fun-loving, youthful",
 };
 
-export function PersonalityCard({ personality }: { personality: Personality }) {
+export function PersonalityCard({
+  personality,
+  disclaimer,
+}: {
+  personality: Personality;
+  disclaimer: string;
+}) {
   const primaryTrait = personality.traits[0] ?? "warm";
   const accentColor = `var(--color-trait-${primaryTrait})`;
 
@@ -73,6 +79,10 @@ export function PersonalityCard({ personality }: { personality: Personality }) {
           </div>
         </div>
       )}
+
+      <p className="mt-6 border-t border-black/[0.06] pt-4 text-[11px] leading-relaxed text-muted-foreground">
+        {disclaimer}
+      </p>
     </div>
   );
 }

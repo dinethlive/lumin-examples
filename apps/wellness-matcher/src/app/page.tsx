@@ -63,9 +63,9 @@ function LoadingState() {
           One moment
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Computing your chart through Lumin&rsquo;s KP engine. This typically takes 25 to 50
-          seconds. Claude is calling several tools, including the dedicated
-          get_ayurvedic_constitution lens, to map planetary placements to your prakriti.
+          Computing your chart through Lumin&rsquo;s KP engine. This typically takes 30 to 100
+          seconds. Nine tool calls, including the dedicated get_ayurvedic_constitution lens, map
+          planetary placements to your prakriti.
         </p>
         <ul className="mt-5 space-y-1.5 text-sm text-muted-foreground">
           {LOADING_STEPS.map((step, i) => (
@@ -89,6 +89,7 @@ function ResultsSection({ result }: { result: MatchResponse }) {
         doshaBalance={result.dosha_balance}
         drivers={result.constitution_drivers}
         summary={result.summary}
+        disclaimer={result.disclaimer}
       />
 
       <div className="mt-10">

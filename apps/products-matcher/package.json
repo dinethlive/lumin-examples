@@ -1,6 +1,6 @@
 {
   "name": "products-matcher",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Lumin example: a generalist e-commerce product matcher that picks items fitting the visitor's nature, derived from their KP/Vedic chart",
   "scripts": {
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.91.0",
+    "@lumin-examples/client": "*",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

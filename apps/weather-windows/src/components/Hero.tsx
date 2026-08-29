@@ -5,7 +5,7 @@ export function Hero() {
         <div className="fade-up">
           <p className="mb-5 inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-medium tracking-wide uppercase text-muted-foreground ring-1 ring-black/[0.05]">
             <span className="size-1.5 rounded-full bg-primary" />
-            KP astrometeorology
+            KP-extended astrometeorology
           </p>
           <h1 className="font-serif text-4xl leading-[1.1] tracking-tight text-foreground md:text-6xl">
             Find the calm
@@ -13,7 +13,7 @@ export function Hero() {
             windows ahead
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            Pick a place and a date range. We&rsquo;ll read the KP weather signature for
+            Pick a place and a date range. We&rsquo;ll read the astrometeorology signature for
             each fortnightly lunation window and score it for temperature, rain, and
             wind, so you can see which stretches lean settled and which look unsettled.
           </p>

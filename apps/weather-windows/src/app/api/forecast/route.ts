@@ -1,31 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
-import type {
-  Channel,
-  ForecastInput,
-  ForecastResponse,
-  WeatherWindow,
-} from "@/lib/types";
+import {
+  runLumin,
+  logRun,
+  parseJsonBlock,
+  ensureShape,
+  LuminClientError,
+} from "@lumin-examples/client";
+import { ALLOWED_TOOLS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
+import type { Channel, ForecastInput, ForecastResponse, WeatherWindow } from "@/lib/types";
 
 export const runtime = "nodejs";
+/** The loading copy promises 40 to 90 seconds, so this has room above that. */
 export const maxDuration = 120;
 
-const LUMIN_MCP_URL =
-  process.env.LUMIN_MCP_URL ?? "https://mcp.lumin.guru/mcp";
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-4-8";
-
-// The astrometeorology family is place-based, not birth-based, so there is no
-// set_birth_profile here. All four place-based tools are now wired:
-// get_seasonal_outlook frames the season, get_weather_windows lists the
-// ~14-day lunation windows, get_astro_weather adds a present-moment snapshot,
-// and get_monsoon_forecast (conditional, monsoon regions) reads the onset.
-const ALLOWED_TOOLS = [
-  "get_seasonal_outlook",
-  "get_weather_windows",
-  "get_astro_weather",
-  "get_monsoon_forecast",
-] as const;
+const ROUTE = "/api/forecast";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_RANGE_DAYS = 220;
@@ -33,7 +21,7 @@ const CHANNEL_LEVELS = ["calm", "mild", "active", "intense"];
 const RATINGS = ["favourable", "mixed", "unfavourable"];
 
 function badRequest(message: string) {
-  return NextResponse.json({ error: message }, { status: 400 });
+  return NextResponse.json({ error: message, failure: "bad_request" }, { status: 400 });
 }
 
 function validateInput(body: unknown): ForecastInput | string {
@@ -69,20 +57,6 @@ function validateInput(body: unknown): ForecastInput | string {
   };
 }
 
-type LooseBlock = { type: string; text?: string };
-
-function extractFinalText(content: unknown): string | null {
-  if (!Array.isArray(content)) return null;
-  const blocks = content as LooseBlock[];
-  for (let i = blocks.length - 1; i >= 0; i--) {
-    const block = blocks[i];
-    if (block.type === "text" && typeof block.text === "string") {
-      return block.text;
-    }
-  }
-  return null;
-}
-
 function isChannel(value: unknown): value is Channel {
   if (typeof value !== "object" || value === null) return false;
   const c = value as Record<string, unknown>;
@@ -95,21 +69,9 @@ function isChannel(value: unknown): value is Channel {
   );
 }
 
-function parseClaudeJson(text: string): ForecastResponse | string {
-  let cleaned = text.trim();
-  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "");
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end === -1) return "Model did not return JSON";
-
-  let parsed: ForecastResponse;
-  try {
-    parsed = JSON.parse(cleaned.slice(start, end + 1)) as ForecastResponse;
-  } catch (err) {
-    return `JSON parse failed: ${(err as Error).message}`;
-  }
-
-  const loc = parsed.resolved_location;
+/** App-specific: the shape this app renders. Kept separate from the shared client. */
+function validateShape(data: ForecastResponse): string | null {
+  const loc = data.resolved_location;
   if (
     !loc ||
     typeof loc.latitude !== "number" ||
@@ -118,13 +80,13 @@ function parseClaudeJson(text: string): ForecastResponse | string {
   ) {
     return "Response missing resolved_location";
   }
-  if (!parsed.season || typeof parsed.season.season !== "string") {
+  if (!data.season || typeof data.season.season !== "string") {
     return "Response missing season";
   }
-  if (!Array.isArray(parsed.windows) || parsed.windows.length === 0) {
+  if (!Array.isArray(data.windows) || data.windows.length === 0) {
     return "Response has no weather windows";
   }
-  for (const w of parsed.windows as WeatherWindow[]) {
+  for (const w of data.windows as WeatherWindow[]) {
     if (typeof w.label !== "string" || typeof w.summary !== "string") {
       return "A window is missing label or summary";
     }
@@ -137,29 +99,22 @@ function parseClaudeJson(text: string): ForecastResponse | string {
   }
   // current and monsoon are optional enrichments (get_astro_weather and
   // get_monsoon_forecast). Validate their channels only when present.
-  if (parsed.current) {
-    const c = parsed.current;
+  if (data.current) {
+    const c = data.current;
     if (!isChannel(c.temperature) || !isChannel(c.precipitation) || !isChannel(c.wind)) {
       return "current snapshot has a malformed weather channel";
     }
   }
-  if (parsed.monsoon && !isChannel(parsed.monsoon.precipitation)) {
+  if (data.monsoon && !isChannel(data.monsoon.precipitation)) {
     return "monsoon outlook has a malformed precipitation channel";
   }
-  if (typeof parsed.disclaimer !== "string") {
-    return "Response missing disclaimer";
+  if (typeof data.disclaimer !== "string" || !data.disclaimer.trim()) {
+    return "Response missing the disclaimer";
   }
-  return parsed;
+  return null;
 }
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(
-      { error: "ANTHROPIC_API_KEY is not set on the server" },
-      { status: 500 },
-    );
-  }
-
   let body: unknown;
   try {
     body = await req.json();
@@ -170,57 +125,30 @@ export async function POST(req: NextRequest) {
   const input = validateInput(body);
   if (typeof input === "string") return badRequest(input);
 
-  const anthropic = new Anthropic();
-
-  const mcpServer: Record<string, unknown> = {
-    type: "url",
-    url: LUMIN_MCP_URL,
-    name: "lumin",
-  };
-  if (process.env.LUMIN_API_KEY) {
-    mcpServer.authorization_token = process.env.LUMIN_API_KEY;
-  }
-
-  const toolConfigs: Record<string, { enabled: true }> = {};
-  for (const tool of ALLOWED_TOOLS) toolConfigs[tool] = { enabled: true };
-
-  let response;
   try {
-    response = await anthropic.beta.messages.create({
-      model: MODEL,
-      max_tokens: 8192,
+    const result = await runLumin({
+      allowedTools: ALLOWED_TOOLS,
       system: buildSystemPrompt(),
-      messages: [{ role: "user", content: buildUserPrompt(input) }],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mcp_servers: [mcpServer] as any,
-      tools: [
-        {
-          type: "mcp_toolset",
-          mcp_server_name: "lumin",
-          default_config: { enabled: false },
-          configs: toolConfigs,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any,
-      ],
-      betas: ["mcp-client-2025-11-20"],
+      user: buildUserPrompt(input),
+      // A wide range can return up to about 15 windows across two paged
+      // tools (get_weather_windows, get_seasonal_outlook), so this has real
+      // headroom. We stream, so it costs nothing when the answer is shorter.
+      maxTokens: 16000,
+      effort: "xhigh",
+      signal: req.signal,
     });
+
+    logRun(ROUTE, result);
+
+    const data = ensureShape(parseJsonBlock<ForecastResponse>(result.text), validateShape);
+    return NextResponse.json(data);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Anthropic call failed";
-    return NextResponse.json({ error: `Anthropic: ${message}` }, { status: 502 });
+    if (err instanceof LuminClientError) {
+      console.error(
+        JSON.stringify({ route: ROUTE, failure: err.failure, detail: err.message }),
+      );
+      return NextResponse.json(err.toBody(), { status: err.status });
+    }
+    throw err;
   }
-
-  const finalText = extractFinalText(response.content);
-  if (!finalText) {
-    return NextResponse.json(
-      { error: "Model returned no text output" },
-      { status: 502 },
-    );
-  }
-
-  const parsed = parseClaudeJson(finalText);
-  if (typeof parsed === "string") {
-    return NextResponse.json({ error: parsed, raw: finalText }, { status: 502 });
-  }
-
-  return NextResponse.json(parsed);
 }

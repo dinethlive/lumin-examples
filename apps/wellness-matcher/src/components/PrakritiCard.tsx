@@ -42,11 +42,13 @@ export function PrakritiCard({
   doshaBalance,
   drivers,
   summary,
+  disclaimer,
 }: {
   prakriti: Prakriti;
   doshaBalance: DoshaBalance;
   drivers: ConstitutionDriver[];
   summary: string;
+  disclaimer: string;
 }) {
   return (
     <div
@@ -108,6 +110,10 @@ export function PrakritiCard({
           </div>
         </div>
       )}
+
+      <p className="mt-6 border-t border-black/[0.06] pt-4 text-[11px] leading-relaxed text-muted-foreground">
+        {disclaimer}
+      </p>
     </div>
   );
 }

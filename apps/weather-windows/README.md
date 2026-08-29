@@ -1,84 +1,104 @@
-# Sky Window Planner
+# Weather Windows
 
-A Lumin example: a single-page widget that takes a **place and a date range** and returns a sequence of roughly 14-day **weather windows**, each scored for temperature, precipitation, and wind, so a planner can see which stretches lean settled and which look unsettled.
+A Lumin example: a single-page widget that takes a **place and a date range** and returns a
+sequence of roughly 14-day **weather windows**, each scored for temperature, precipitation, and
+wind, so a planner can see which stretches lean settled and which look unsettled.
 
-This is the first example built on the **KP astrometeorology** tool family, the non-natal side of the Lumin MCP. Unlike the sibling examples, it reads the weather signature for a **location**, not a person, so it never asks for birth data and never calls `set_birth_profile`.
+**Vertical:** outdoor event venues, agritech and farm planning, tour operators, construction and
+logistics schedulers, and film production, anywhere a fortnight-by-fortnight outlook helps frame a
+decision made months ahead. This is the first example built on the astrometeorology family, the
+non-natal side of the Lumin MCP server: it reads the weather signature for a **location**, not a
+person, so it never asks for birth data and never calls `set_birth_profile`.
 
-Designed as a drop-in pattern for **outdoor event venues, agritech and farm planning, tour operators, construction and logistics schedulers, and film production**, anywhere a fortnight-by-fortnight outlook helps frame a decision. Fork it and re-skin for your brand.
+<!-- screenshot: docs/weather-windows.png -->
 
-## How it works
+## What it wires
 
-```
-Browser form (place as free text, range start date, range end date)
-  -> POST /api/forecast
-  -> Anthropic Messages API + mcp.lumin.guru attached
-  -> Claude resolves the place to lat/lng/UTC offset
-  -> Claude calls the astrometeorology tools:
-       get_seasonal_outlook  (the four cardinal-ingress season themes; the
-                              one covering the range becomes the banner)
-       get_weather_windows   (one ~14-day window per new/full moon across
-                              the range, each with temperature, precipitation,
-                              and wind/storm channels + the 4th-cusp CSL verdict)
-       get_astro_weather     (the present-moment signature for the place, an
-                              "as of today" anchor beside the future windows)
-       get_monsoon_forecast  (conditional: monsoon onset from the Ardra
-                              Pravesha chart, only for monsoon-belt places)
-  -> Claude normalizes each channel to a level (calm/mild/active/intense),
-     a human band word, a 0-100 score, and the chart signature behind it
-  -> Claude rates each window favourable / mixed / unfavourable for outdoor plans
-  -> Client renders a season banner + a grid of weather-window cards
-```
+| Tool | What it contributes | System |
+|---|---|---|
+| `get_seasonal_outlook` | Four seasonal themes for a year, from the cardinal ingress charts. Used for the season banner. **Paged.** | KP-extended |
+| `get_weather_windows` | Roughly 14-day windows across a date range, each cast from a lunation chart. Primary tool. **Paged.** | KP-extended |
+| `get_astro_weather` | The signature for the place at the present moment, an "as of today" anchor beside the future windows | KP-extended |
+| `get_monsoon_forecast` | Monsoon onset from the Ardra Pravesha chart, called only for monsoon-belt places | KP-extended |
 
-The **business logic lives in the server-side prompt** (`src/lib/prompt.ts`): place resolution, channel normalization, the outdoor-rating rules, and the disclaimer. The Lumin MCP tools stay generic. Same integration pattern as the sibling examples (`wellness-matcher`, `products-matcher`, `health-risk-analyzer`): a server route, the Anthropic SDK with `mcp_servers` attached, a structured JSON response, no chatbot UI.
+All four astrometeorology tools are tagged **KP-extended** in the tool taxonomy: a later-author
+extension of KP technique applied to a moment in time rather than a birth, not orthodox
+Krishnamurti Paddhati itself (KSK's own books have no weather chapter). The system prompt says so
+up front, and this README says so too: the copy in this app calls the result an "astrometeorology
+signature," never "the KP forecast."
 
-## The astrometeorology tool family
+## What it costs
 
-The May-2026 Lumin MCP shipped 78 tools. The v4 sweep took the catalog to 144, and it has since grown to **~159 tools** (the session's live server). Four of them are a distinct **astrometeorology** family. They are place-based: each takes a location and a date, never birth data, and reads a KP weather signature with three channels (temperature, precipitation, wind/storm), a 4th-cusp CSL verdict, and a Sapta Nadi Chakra block.
-
-| Tool | What it reads |
+| Path | Calls per forecast |
 |---|---|
-| `get_weather_windows` | Roughly 14-day windows across a date range, each cast from a lunation chart. **Primary tool here.** |
-| `get_seasonal_outlook` | Four seasonal themes for a year, from the cardinal ingress charts. **Used here for the banner.** |
-| `get_astro_weather` | The signature for a single place and moment. **Wired here as the "as of today" snapshot card.** |
-| `get_monsoon_forecast` | Monsoon onset from the Ardra Pravesha chart. **Wired here, conditionally, for monsoon-belt places.** |
+| As shipped, all four tools, non-monsoon place | **3** |
+| As shipped, all four tools, monsoon place in season | **4** |
+| Minimum useful forecast (`get_weather_windows` only) | 1, plus 1 more per extra page |
 
-This example now wires **all four**. The two natal-free additions surface as a present-conditions card (`get_astro_weather`, always read) and a monsoon-onset card (`get_monsoon_forecast`, populated only when the place sits in a monsoon climate and the range overlaps the season; null otherwise).
+`get_weather_windows` and `get_seasonal_outlook` are both paged. This app allows a range up to 220
+days, which produces roughly 15 windows and can span more than one page, so a wide-range forecast
+can cost more than the table above before counting monsoon or paging. The free plan is 300 tool
+calls per month per credential, so the shipped path runs about 75 to 100 forecasts a month on the
+free tier depending on range width.
+
+## Paging is a correctness requirement here, not an optimization
+
+A page exists so the model gives each window a real reasoning pass, not so the response is smaller.
+The prompt instructs the model to read `pagination.totalItems` and `pageNote` after every
+`get_weather_windows` or `get_seasonal_outlook` call and to call again with `page` incremented until
+every window in the requested range has actually been read. Stopping at page 1 on a wide range is
+silent data loss dressed up as a smaller answer: the app would report "no unsettled stretch found"
+when the truth is "no unsettled stretch found on the pages I bothered to read."
 
 ## Why this is interesting for B2B
 
-- Conventional forecasts are sharp inside about 10 days and vague beyond. This lens gives a **structured fortnightly lean for months ahead**, useful when a date has to be picked early.
-- The output is **structured JSON** (not a chat blob), so it slots into a venue booking flow, a crop calendar, or a shoot scheduler.
-- It is a **planning prompt**, not a forecast. The pattern pairs naturally with a real meteorological API: show both, let the planner weigh them.
+- Conventional forecasts are sharp inside about 10 days and vague beyond. This lens gives a
+  **structured fortnightly lean for months ahead**, useful when a date has to be picked early.
+- The output is **structured JSON**, not a chat transcript, so it slots into a venue booking flow, a
+  crop calendar, or a shoot scheduler.
+- It is a **planning prompt**, not a forecast. The pattern pairs naturally with a real
+  meteorological API: show both, let the planner weigh them.
 
 ## City and place resolution
 
-The form asks for a free-text place ("Colombo, Sri Lanka", "Chennai", "Lisbon, Portugal"). Claude resolves it to coordinates and the UTC offset in effect during the range using its built-in geographic knowledge: no separate geocoding API needed for the demo. The resolved values are surfaced in the response so the user can verify the right place was used. For production traffic, swap in a real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
+The form asks for a free-text place ("Colombo, Sri Lanka", "Chennai", "Lisbon, Portugal"). The
+model resolves it to coordinates and the UTC offset in effect during the range from its own
+geographic knowledge, so the demo needs no separate geocoding API. The resolved values are surfaced
+in the response so a visitor can verify the right place was used. For production traffic, swap in a
+real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
 
 ## Run it
 
 ```bash
-cp .env.example .env.local
-# Add ANTHROPIC_API_KEY=sk-ant-... to .env.local
-
+# from the repo root
 npm install
-npm run dev
-# http://localhost:3103
+cp apps/weather-windows/.env.example apps/weather-windows/.env.local
+# ANTHROPIC_API_KEY  your model key
+# LUMIN_API_KEY      from https://app.lumin.guru/developer
+
+npm run dev -w apps/weather-windows   # http://localhost:3103
 ```
 
-## Deploy
+## Make it yours
 
-Vercel-ready. Set `ANTHROPIC_API_KEY` in project env vars and import. `maxDuration` is set to 120s on the API route to accommodate the per-lunation chart computations (typical run: 30 to 70s).
-
-## Customize for your vertical
-
-1. Edit `src/lib/prompt.ts`. Tighten the outdoor-rating rules (an agritech build cares about precipitation; an event venue cares about wind and rain together), or drop the `current`/`monsoon` blocks if your vertical does not need them (set them to null in the prompt and the cards disappear).
+1. Edit `src/lib/prompt.ts`. Tighten the outdoor-rating rules (an agritech build cares about
+   precipitation; an event venue cares about wind and rain together), or drop the `current` and
+   `monsoon` blocks if your vertical does not need them.
 2. Adjust the channel bands in the prompt and `WindowCard` to your domain vocabulary.
 3. Restyle `src/app/globals.css` and `src/components/*` with your colors and typography.
-4. Swap the authless MCP endpoint for `/mcp/auth` plus an API key when usage exceeds 50 calls/day per IP.
+4. Cache it. Within a lunation window, the signature is stable; a daily cache keyed on place plus
+   window drops the per-visitor tool cost close to zero for a public page.
 
-## Important: this is not a forecast
+## The disclaimer it ships
 
-This is a **KP astrometeorology signature, an astrological weather lens, not a meteorological forecast**. Treat every window as a planning prompt to pair with conventional weather services, satellite data, and local knowledge. Each window describes a tendency, not a guarantee. The disclaimer text is enforced server-side and surfaced in the UI on every result.
+> This is a KP astrometeorology signature, an astrological weather lens, not a meteorological
+> forecast. Treat it as a planning prompt to pair with conventional weather services, satellite
+> data, and local knowledge. Each window describes a tendency, not a guarantee.
+
+It is mandated in the system prompt, validated as a required field when the response arrives, and
+rendered by `DisclaimerBanner` on every result. It is worded as a lens next to conventional
+forecasts, never a replacement for one, because a wrong outdoor-safety call from an astrological
+reading is the one failure mode this app cannot afford to invite.
 
 ## License
 

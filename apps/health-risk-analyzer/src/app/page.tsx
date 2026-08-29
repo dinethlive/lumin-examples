@@ -68,10 +68,9 @@ function LoadingState() {
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           A full constitutional health analysis runs through a 7-step KP protocol,
-          typically 50 to 130 seconds. Claude is calling around 25 Lumin tools to map
-          planetary placements to body systems, watch-decade disease panels, the
-          body-region affliction panel, accident windows, the Saturn cycle, and a
-          qualitative lifespan band.
+          typically 60 to 150 seconds. Around 31 Lumin tool calls map planetary placements
+          to body systems, watch-decade disease panels, the body-region affliction panel,
+          accident windows, the Saturn cycle, and a qualitative lifespan band.
         </p>
         <ul className="mt-5 space-y-1.5 text-sm text-muted-foreground">
           {LOADING_STEPS.map((step, i) => (

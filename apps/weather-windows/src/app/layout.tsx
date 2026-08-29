@@ -21,9 +21,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sky Window Planner | Lumin example",
+  title: "Weather Windows | Lumin example",
   description:
-    "A KP astrometeorology outdoor-window planner: fortnightly weather windows for a place and date range, scored for temperature, rain, and wind. A Lumin MCP integration example.",
+    "A KP-extended astrometeorology outdoor-window planner: fortnightly weather windows for a place and date range, scored for temperature, rain, and wind. A Lumin MCP integration example.",
   robots: { index: false, follow: false },
 };
 

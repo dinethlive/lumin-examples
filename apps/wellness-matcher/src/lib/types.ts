@@ -68,6 +68,8 @@ export type MatchResponse = {
   constitution_drivers: ConstitutionDriver[];
   summary: string;
   matches: Array<Match & Product>;
+  /** Mandated in the prompt, validated on arrival, rendered by PrakritiCard. */
+  disclaimer: string;
 };
 
 export type BiologicalSex = "female" | "male" | "unspecified";
