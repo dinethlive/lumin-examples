@@ -30,16 +30,21 @@ only a number and a moment, so you can ship a real feature with no consent flow.
 
 ## Run one
 
+Needs [Bun](https://bun.sh) 1.2 or newer.
+
 ```bash
-npm install
+bun install
 cp apps/today-panel/.env.example apps/today-panel/.env.local
-npm run dev -w apps/today-panel     # http://localhost:3110
+bun run --filter today-panel dev     # http://localhost:3110
 ```
 
 Two keys. `ANTHROPIC_API_KEY` is yours, the model bill is yours.
 `LUMIN_API_KEY` comes from [app.lumin.guru/developer](https://app.lumin.guru/developer).
 
 Top up any amount from $1 for 400 calls. A lookup is a few calls, a full reading is 25 to 40.
+
+Bun is the package manager and task runner. Next itself still builds on Node, because Next 16
+with Turbopack does not run under the Bun runtime yet.
 
 ## The pattern
 
@@ -64,7 +69,7 @@ limit that arrives as tool-result text rather than an HTTP status.
 ## Contributing
 
 [CONTRIBUTING.md](./CONTRIBUTING.md). Two rules matter most. Verify every tool name, because
-`npm run check:tools` fails CI on one that does not exist. Label every non-KP tool, because a
+`bun run check:tools` fails CI on one that does not exist. Label every non-KP tool, because a
 third of the surface is Parashari, Jaimini or Tajik.
 
 MIT. See [LICENSE](./LICENSE).

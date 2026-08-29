@@ -64,12 +64,12 @@ full readings a month on the free tier, or about 30 on the composite path.
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/career-fit/.env.example apps/career-fit/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/career-fit   # http://localhost:3114
+bun run --filter career-fit dev   # http://localhost:3114
 ```
 
 ## Make it yours

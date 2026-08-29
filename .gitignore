@@ -1,4 +1,9 @@
 node_modules/
+
+# Bun is the package manager here. Do not commit an npm lockfile.
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
 .next/
 out/
 dist/

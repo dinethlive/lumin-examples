@@ -7,7 +7,7 @@
     "dev": "next dev --port 3103",
     "build": "next build",
     "start": "next start --port 3103",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@lumin-examples/client": "*",

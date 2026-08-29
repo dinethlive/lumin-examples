@@ -11,7 +11,7 @@
 
 ## The rules that are not style preferences
 
-**Verify every tool name.** Never write one from memory. `npm run check:tools` parses every file in
+**Verify every tool name.** Never write one from memory. `bun run check:tools` parses every file in
 the repo and fails on a name the server does not expose, and it runs in CI. A wrong name is a
 silent tool-not-found inside a model conversation, where nobody sees it.
 
@@ -49,9 +49,9 @@ and wanted; let the interpretation field carry the plain-language meaning.
 ## Before you open a pull request
 
 ```bash
-npm run check:tools
-npm run typecheck -w apps/<your-app>
-npm run build -w apps/<your-app>
+bun run check:tools
+bun run --filter <your-app> typecheck
+bun run --filter <your-app> build
 ```
 
 All three must pass. CI runs them on every app.

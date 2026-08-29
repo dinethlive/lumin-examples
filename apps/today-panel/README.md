@@ -56,12 +56,12 @@ Two smaller ones:
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/today-panel/.env.example apps/today-panel/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/today-panel   # http://localhost:3110
+bun run --filter today-panel dev   # http://localhost:3110
 ```
 
 ## Make it yours

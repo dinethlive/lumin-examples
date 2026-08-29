@@ -71,12 +71,12 @@ real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/weather-windows/.env.example apps/weather-windows/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/weather-windows   # http://localhost:3103
+bun run --filter weather-windows dev   # http://localhost:3103
 ```
 
 ## Make it yours

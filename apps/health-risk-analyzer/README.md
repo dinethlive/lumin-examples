@@ -124,12 +124,12 @@ The vitality index loses about 15 points of confidence and the constitutional no
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/health-risk-analyzer/.env.example apps/health-risk-analyzer/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/health-risk-analyzer   # http://localhost:3102
+bun run --filter health-risk-analyzer dev   # http://localhost:3102
 ```
 
 ## Make it yours

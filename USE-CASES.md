@@ -1,7 +1,7 @@
 # What you can build on Lumin
 
 A catalog of product use cases, each grounded in the tools that actually exist. Every tool name
-here was verified against the server's tool list; `npm run check:tools` fails CI if one drifts.
+here was verified against the server's tool list; `bun run check:tools` fails CI if one drifts.
 
 The server exposes **204 tools**: 201 catalogued plus three meta-tools (`set_birth_profile`,
 `get_reading_protocol`, `get_tool_catalog`). They are grouped into 29 families along four axes

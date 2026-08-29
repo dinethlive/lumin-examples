@@ -115,12 +115,12 @@ elected, so it is rendered as one pill beside the result rather than folded into
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/muhurta-scheduler/.env.example apps/muhurta-scheduler/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/muhurta-scheduler   # http://localhost:3112
+bun run --filter muhurta-scheduler dev   # http://localhost:3112
 ```
 
 ## Make it yours

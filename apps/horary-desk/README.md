@@ -62,12 +62,12 @@ in the UI. Nowhere does this codebase treat a withheld verdict as a failure.
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/horary-desk/.env.example apps/horary-desk/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/horary-desk   # http://localhost:3111
+bun run --filter horary-desk dev   # http://localhost:3111
 ```
 
 ## The detail worth copying

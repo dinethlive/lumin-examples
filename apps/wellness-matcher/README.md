@@ -73,12 +73,12 @@ begins by saying so.
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/wellness-matcher/.env.example apps/wellness-matcher/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/wellness-matcher   # http://localhost:3100
+bun run --filter wellness-matcher dev   # http://localhost:3100
 ```
 
 ## Make it yours

@@ -96,12 +96,12 @@ close a chart sits to that exact kind of boundary.
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/kundli-match/.env.example apps/kundli-match/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/kundli-match   # http://localhost:3113
+bun run --filter kundli-match dev   # http://localhost:3113
 ```
 
 ## Make it yours

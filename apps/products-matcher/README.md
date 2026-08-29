@@ -69,12 +69,12 @@ degrees and longitude; Strongest planet becomes approximate. The summary begins 
 
 ```bash
 # from the repo root
-npm install
+bun install
 cp apps/products-matcher/.env.example apps/products-matcher/.env.local
 # ANTHROPIC_API_KEY  your model key
 # LUMIN_API_KEY      from https://app.lumin.guru/developer
 
-npm run dev -w apps/products-matcher   # http://localhost:3101
+bun run --filter products-matcher dev   # http://localhost:3101
 ```
 
 ## Make it yours
