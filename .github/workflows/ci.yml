@@ -23,6 +23,11 @@ jobs:
       fail-fast: false
       matrix:
         app:
+          - today-panel
+          - horary-desk
+          - muhurta-scheduler
+          - kundli-match
+          - career-fit
           - wellness-matcher
           - products-matcher
           - health-risk-analyzer
