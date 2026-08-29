@@ -1,0 +1,28 @@
+{
+  "name": "kundli-match",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lumin example: three compatibility systems, side by side, with the places they disagree",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev --port 3113",
+    "build": "next build",
+    "start": "next start --port 3113",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lumin-examples/client": "*",
+    "next": "16.3.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.8.3"
+  }
+}
