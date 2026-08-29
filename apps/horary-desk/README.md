@@ -114,10 +114,10 @@ the input instantly, with no server round trip and no model in the loop, and the
 still edit the result before asking. The system prompt never invents a number under any
 circumstance.
 
-**The place of judgment comes straight from the browser, not from a free-text city.** KP Reader
-6 states the rule directly: the other eleven cusps are solved from the number-fixed Ascendant
-for the LATITUDE of judgment, not the longitude, and "one is to note the latitude of the place
-of judgment and not the place from which the query is put." So this app skips the free-text
+**The place of judgment comes straight from the browser, not from a free-text city.** In KP horary
+the other eleven cusps are solved from the number-fixed Ascendant for the LATITUDE of judgment
+rather than the longitude, and what matters is the place where the question is judged, not the
+place it was asked from. So this app skips the free-text
 city-plus-LLM-resolution step the today-panel example uses and reads latitude and longitude
 straight from `navigator.geolocation`, with a manual override and a Colombo, Sri Lanka default
 if permission is denied. There is nothing for a model to get wrong here.

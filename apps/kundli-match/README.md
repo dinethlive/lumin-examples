@@ -4,8 +4,8 @@ Three independent compatibility systems for two birth charts, rendered side by s
 agreement meter across the top and a drawer that explains, in each tradition's own terms, where
 they part company. Not one blended Guna score with no reasoning behind it.
 
-**Vertical:** matrimonial platforms, the largest consumer market this server touches. The
-differentiator is not a better number, it is showing three systems and naming where they
+**Vertical:** matrimonial platforms. The design idea is not a better number, it is showing three
+systems and naming where they
 disagree, which a single-score API cannot do.
 
 <!-- screenshot: docs/kundli-match.png -->

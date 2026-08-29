@@ -14,7 +14,7 @@ Parashari tool as a KP finding is a methodology error that reads as thoroughness
 ## Start here: what you can ask the user for decides what you can build
 
 This is the most useful fact on this page. Tools divide by **input class**, and the class decides
-the product shape, the consent burden, and the conversion friction.
+the product shape, the consent burden, and how much you have to ask a user for.
 
 | Input class | Tools | What it needs | Consent friction |
 |---|---|---|---|
@@ -25,8 +25,8 @@ the product shape, the consent burden, and the conversion friction.
 | **Mundane** | 2 | A country, company or location chart | None, no private individual |
 | **Reference** | 3 | Nothing | None. Free discovery calls |
 
-**21 tools need nothing personal at all.** Those are your no-signup demo, your public widget, and
-your SEO surface:
+**21 tools need nothing personal at all.** These are the ones you can put on a public page with no
+signup and no consent flow:
 
 ```
 get_ephemeris            get_sublord_changes      get_transit_crossings    get_rp_interval
@@ -60,8 +60,8 @@ Two corrections to assumptions people make from the family names, both verified 
 | 7 | Chemistry card with no birth time | `get_nakshatra_details`, `get_chara_karakas`, `get_arudha_lagna`, `get_ayurvedic_constitution` | Entertainment framing |
 | 8 | Wedding date both families accept | `get_election_catalog`, `find_wedding_muhurta`, `find_joint_election_window`, `rank_candidate_dates` | The two-chart mode is a Lumin extension, label it |
 
-**Why it beats a generic horoscope API:** three independent compatibility systems computed on the
-same two charts, with disagreements surfaced rather than blended into one number.
+**What this gives you:** three independent compatibility systems computed on the same two charts,
+with disagreements surfaced rather than blended into one number.
 
 ## B. E-commerce and D2C personalization
 
@@ -75,8 +75,8 @@ same two charts, with disagreements surfaced rather than blended into one number
 | 14 | Colour, metal and material palette | `get_yoga_karaka`, `get_gemstone_recommendation`, `get_ayurvedic_constitution` | Aesthetic personalization |
 | 15 | Send-time optimisation per user | `get_moon_transit`, `get_sublord_changes`, `get_tara_bala` | None |
 
-**Why it beats sun signs:** public image (`get_arudha_lagna`) and soul drive (`get_chara_karakas`)
-are two different axes from two different traditions. 27 birth-star buckets, not 12.
+**What this gives you:** public image (`get_arudha_lagna`) and soul drive (`get_chara_karakas`) are
+two different axes from two different traditions, and 27 birth-star buckets to segment on.
 
 ## C. Wellness, Ayurveda and beauty
 
@@ -89,8 +89,9 @@ are two different axes from two different traditions. 27 birth-star buckets, not
 | 20 | Practice recommender | `get_chara_karakas`, `get_ishta_devata`, `get_mantra_recommendation`, `get_past_life_karmic_panel` | Spiritual framing |
 | 21 | Corporate wellness cohort dashboard | `get_vitality_index`, `get_chronic_disease_panel`, `get_health_transit_alerts` | **Aggregate only.** Individual output never reaches a manager |
 
-**Why it beats a survey:** no quiz fatigue, deterministic, and reproducible for the same user
-forever, with a data-quality pill from `get_boundary_warnings`.
+**What this gives you:** a constitution derived from birth data rather than a questionnaire, so it
+is deterministic and reproducible for the same user, with a data-quality signal from
+`get_boundary_warnings`.
 
 ## D. Health and telehealth
 
@@ -220,7 +221,7 @@ astrology APIs do not have at all.
 | 75 | Interactive "ask the sky" web toy | `get_horary_chart_v2`, `get_horary_advanced`, `get_lost_or_missing` | Entertainment framing |
 
 Showing four schools disagreeing (`get_multi_system_verdict`) is a more interesting and more honest
-format than one confident verdict, and nobody else can produce it.
+format than one confident verdict.
 
 ## O. B2B SaaS personalization
 
@@ -232,8 +233,8 @@ format than one confident verdict, and nobody else can produce it.
 | 79 | Data-quality service for an existing astrology product | `get_boundary_warnings`, `get_subsub_boundary`, `check_rule_of_origin`, `run_pre_verdict_audit` | None |
 | 80 | Cross-system consensus as a confidence API | `get_multi_system_verdict`, `get_kcil_verdict`, `get_four_step_verdict`, `run_triple_dasha_consensus` | Label each school, never blend into one authority |
 
-**#79 is the one nobody else sells:** a service that tells an existing astrology database how much
-of it is unreliable, grounded in the fact that a six arc-minute shift can invert a verdict.
+**#79 is worth calling out:** a service that scores how reliable an existing chart database is,
+grounded in the fact that a small shift in birth time can change a verdict.
 
 ## P. Calendars, productivity and scheduling
 
@@ -277,8 +278,8 @@ implementations miss.
 | 97 | Family panel from one chart | `get_relatives_karaka_panel`, `get_d12_chart`, `get_d3_chart`, `get_d7_chart` | No health or lifespan claims about a relative who has not consented |
 | 98 | Onboarding rescue when the birth time is unknown | `find_birth_time`, `get_twin_divergence_score`, `rectify_birth_time`, `check_rule_of_origin`, `get_boundary_warnings` | Always show the confidence. Never present a rectified time as certain |
 
-**#98 is the biggest funnel leak in every astrology product**, and the platform has four
-independent tools for it.
+**#98 matters more than it looks:** a large share of users do not know their birth time, and there
+are four independent tools for recovering it.
 
 ---
 
@@ -295,10 +296,11 @@ slice gets a real reasoning pass.
 field from `get_tool_catalog` and render a chip beside any non-KP panel. This is a differentiator,
 not an apology: no competitor can even tell you which tradition an answer came from.
 
-**3. Count your calls.** The free plan is 300 tool calls per month per credential, and a full
-reading is 25 to 40 calls. The eight `run_*` composites chain several engine calls into one
-metered call, so "one `run_year_outlook_complete` instead of eight calls" is both a cost argument
-and an architecture lesson. Every example README states both paths and their call counts.
+**3. Size your usage.** Top up any amount from 1 USD, which is 400 tool calls, and any larger
+amount works the same way. More calls means more readings, and deeper ones: a quick lookup is a
+handful of calls, a full reading is 25 to 40. The eight `run_*` composites chain several engine
+calls into one, which is the cheaper way to cover the same ground. Every example README states what
+a single run costs.
 
 ---
 

@@ -23,7 +23,7 @@ const AGREEMENT_TONE: Record<string, "good" | "neutral" | "bad"> = {
 };
 
 /**
- * Screen 2. Five independently sourced rules, rendered as five rows with the
+ * Screen 2. Five independent rules, rendered as five rows with the
  * rule named, never blended into one score. This is the direct visual
  * argument against black-box scoring: when the rules disagree, the
  * disagreement is shown, not resolved silently.
@@ -32,7 +32,7 @@ export function ModePanel({ jobVsBusiness }: { jobVsBusiness: CareerFitResponse[
   return (
     <Card
       title="Service against business"
-      subtitle="Five sourced KP rules, reported side by side, never merged into one score"
+      subtitle="Five KP rules, reported side by side, never merged into one score"
       right={<SystemChip system="kp" />}
     >
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -58,7 +58,7 @@ export function ModePanel({ jobVsBusiness }: { jobVsBusiness: CareerFitResponse[
               </span>
               <div>
                 <p className="text-sm">{rule.explanation}</p>
-                <p className="mt-1 text-xs text-black/45">{rule.source}</p>
+                <p className="mt-1 text-xs text-black/45">{rule.tests}</p>
               </div>
             </div>
             <div className="shrink-0 sm:pl-3">

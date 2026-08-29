@@ -55,22 +55,18 @@ classical texts, so this is close to a third of the app's own tool set, not an e
 
 ## `get_vedha_transit` was removed, and replaced with the orthodox KP chain
 
-The earlier build used `get_vedha_transit` as its mandatory timing trigger and described it in the
-prompt as "the KP Reader 5 transit rules." That framing did not survive a check against the tool
-taxonomy: `get_vedha_transit` reads the traditional Hindu Gochara transit-obstruction rule, and the
-taxonomy tags it Vedic Parashari for a specific, sourced reason. KP Reader 5 itself heads that
-chapter "HINDU SYSTEM," records K.S. Krishnamurti's own dissent on the page ("Here I differ from
-them... Their method of judgement is wrong"), and closes by calling the Gochara system "useless,
-meaningless and not universally applicable." The book goes on to warn that an author who reproduces
-the traditional dicta without that caveat does harm.
+The earlier build used `get_vedha_transit` as its mandatory timing trigger and described it as a KP
+transit rule. That framing did not survive a check against the tool taxonomy:
+`get_vedha_transit` reads the traditional Gochara transit-obstruction rule, and the taxonomy tags it
+Vedic Parashari rather than KP. KP does not accept that rule as a transit trigger.
 
-Using a rule the source book calls useless as the gating trigger for a health app's `peak_window`
-claims was the wrong call, not a labeling nit, so it was replaced rather than relabeled. The
+Using it as the gating trigger for a health app's `peak_window` claims was a correctness problem
+rather than a labelling nit, so it was replaced rather than relabelled. The
 timing trigger is now the orthodox KP transit chain: `get_ruling_planets` (the timing-verification
 set) feeds `get_fruitful_significators` (the significator matrix intersected with ruling planets,
 per event), which feeds `get_transit_timing_hierarchy` (the Saturn-to-Moon cascade, which only opens
-a window where a fruitful significator's star and sub lord line up, per KP Reader 5 canon p.195,
-the same book, its own methodology). That is three tool calls in place of one, which is why the
+a window where a fruitful significator's star and sub lord line up). That is three tool calls in
+place of one, which is why the
 tool count moved from 29 to 31. Relabeling `get_vedha_transit` as a cross-system reference and
 keeping it as a secondary signal was the other option on the table; it was set aside because the
 app calls it the *mandatory* trigger, and a discredited rule should not gate a claim regardless of

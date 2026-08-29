@@ -128,7 +128,8 @@ export type JobVsBusinessResult = "service" | "business" | "mixed" | "inconclusi
  */
 export type JobVsBusinessRule = {
   id: "A" | "B" | "C" | "D" | "E";
-  source: string;
+  /** One line naming what this rule examines. */
+  tests: string;
   result: JobVsBusinessResult;
   explanation: string;
 };

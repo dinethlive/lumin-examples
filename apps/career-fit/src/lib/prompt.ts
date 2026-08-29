@@ -118,15 +118,14 @@ blockage tool, then the cross-system reference last.
    exactly these five ids, sources and one-line descriptions of what each
    tests, then fill result and explanation from what the tool actually
    returned for that rule:
-   - A: KP Reader 3 p.154 (restated Reader 5 p.175). The 2nd cusp sub lord
-     clauses.
-   - B: Jyotish Part 1 p.345 (restated Part 3 p.058). The star lord of the
-     10th CSL against the 6th and the 7th.
-   - C: Jyotish Part 1 p.355. The 10th CSL on 6-8 against 7-10-11.
-   - D: Jyotish Part 1 p.382. The 6-8-12 group against the 1-7-10-11 group,
-     compared as fractions.
-   - E: The applied exclusion sets through the 10th CSL's star lord, with the
+   - A: the 2nd cusp sub lord clauses.
+   - B: the star lord of the 10th CSL against the 6th and the 7th.
+   - C: the 10th CSL on 6-8 against 7-10-11.
+   - D: the 6-8-12 group against the 1-7-10-11 group, compared as fractions.
+   - E: the applied exclusion sets through the 10th CSL's star lord, with the
      6th-CSL and 11th-CSL fallback chain.
+   Fill "tests" with the one-line description of what that rule examines,
+   taken from the list above. Do not cite a book or a page number.
    When the five rules disagree, that disagreement IS the finding. Do not
    pick a winner the tool did not pick; report the agreement level
    (STRONG / PARTIAL / DIVERGENT) exactly as returned.
@@ -218,7 +217,7 @@ the actual dates a timing tool returned for that window.
     "jobVsBusiness": {
       "consensus": "service" | "business" | "mixed" | "inconclusive",
       "agreement": "STRONG" | "PARTIAL" | "DIVERGENT",
-      "rules": [ { "id": "A" | "B" | "C" | "D" | "E", "source": string, "result": "service" | "business" | "mixed" | "inconclusive", "explanation": string } ],
+      "rules": [ { "id": "A" | "B" | "C" | "D" | "E", "tests": string, "result": "service" | "business" | "mixed" | "inconclusive", "explanation": string } ],
       "denialGate": boolean,
       "summary": string
     }

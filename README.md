@@ -47,9 +47,11 @@ npm run dev -w apps/today-panel   # http://localhost:3110
 ```
 
 Every Lumin endpoint requires credentials. API keys go to `https://mcp.lumin.guru/mcp`; `/mcp/auth`
-is the OAuth-only endpoint and rejects API keys. The free plan is 300 tool calls per month per
-credential, so a 25-call reading is roughly a dozen free runs. Each app README states its call
-count for both the composite path and the expanded path.
+is the OAuth-only endpoint and rejects API keys.
+
+Calls are topped up in any amount, starting at 1 USD for 400 tool calls. More calls means more
+readings, and deeper ones: a quick lookup is a handful of calls, a full reading is 25 to 40. Each
+app README states what one run costs.
 
 ## The pattern every app follows
 
