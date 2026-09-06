@@ -66,6 +66,17 @@ It handles what a bare `messages.create` does not: `pause_turn` resumption, refu
 truncation mapped to real statuses, a check that some Lumin tool actually ran, and the rate
 limit that arrives as tool-result text rather than an HTTP status.
 
+## Building with an agent
+
+`AGENTS.md` (imported by `CLAUDE.md`) carries what an agent needs to run, verify and extend the
+repo. `.mcp.json` connects Claude Code to the hosted server, and the Lumin plugin adds `kp-build`,
+the skill for this kind of work.
+
+```
+/plugin marketplace add https://www.lumin.guru/plugin/marketplace.json
+/plugin install lumin@lumin
+```
+
 ## Contributing
 
 [CONTRIBUTING.md](./CONTRIBUTING.md). Two rules matter most. Verify every tool name, because
