@@ -58,7 +58,7 @@ the "why" behind the number needs the expanded path that this app ships.
 ## Screens
 
 1. Two birth forms side by side, one per person. Each form asks for name, birth date and time,
-   birth place, UTC offset, and gender. The time has a "time not known" toggle.
+   birth place, birth time zone, and gender. The time has a "time not known" toggle.
 2. An agreement meter (high, mixed, low). The app computes it from whether the three systems
    concur. Each chart also gets a birth-time confidence pill. Below them is a panel for each
    system, with its own score, factors and headline verdict. Directly below is the dosha card. It
@@ -92,14 +92,20 @@ schema error. `src/lib/prompt.ts` gives the exact shape for each of the eleven c
 does not have to guess. This README repeats the shapes. Then a developer who forks this app does
 not have to derive them again by hand from `kp-mcp/src/mcp/tools.ts`.
 
-**The form asks for the UTC offset directly. The model does not resolve it.** For the other place
-fields (latitude, longitude), the app trusts the model's own knowledge, as the other apps in this
-repo do.
+**The form asks for the birth time zone. The route computes the UTC offset from it.** For the
+other place fields (latitude, longitude), the app trusts the model's own knowledge, as the other
+apps in this repo do.
 
 But `get_boundary_warnings` exists because a cuspal sub lord can flip on a boundary a few
 arc-minutes wide. The UTC offset feeds the Ascendant calculation directly. A model's guess at a
-historical time zone is not good enough here. The whole job of this tool is to measure how close a
-chart sits to that kind of boundary.
+historical offset is not good enough here. A typed offset is not good enough either, because people
+often type today's offset. The whole job of this tool is to measure how close a chart sits to that
+kind of boundary.
+
+So each person names an IANA zone, such as `Asia/Colombo`. The route reads the offset in force at
+the birth moment from the tz database, with `offsetMinutesAt` from `@lumin-examples/client`. The
+nested `partner` and `person2` objects take a number, so the route sends that computed offset to
+every tool. The form shows the offset as a hint under the field, so a wrong zone shows itself.
 
 ## Run it
 

@@ -54,10 +54,11 @@ rules. The Lumin tools stay generic. This app uses the same integration pattern 
 `wellness-matcher`. Only the mapping layer differs, and this catalog is broader.
 
 The form asks for the birth city as free text, such as "Colombo, Sri Lanka", "Mumbai" or "London,
-UK". The model resolves the city to coordinates and the historical UTC offset from its own
-geographic knowledge. So the demo needs no separate geocoding API. The response includes the
-resolved coordinates, so a visitor can check that the app used the right city. For production
-traffic, use a real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
+UK". The model resolves the city to coordinates and an IANA time zone from its own
+geographic knowledge. It never types a UTC offset, because Lumin reads the offset in force at birth
+from the zone. So the demo needs no separate geocoding API. The response shows the coordinates, the
+zone and the offset at birth, so a visitor can check that the app used the right city. For
+production traffic, use a real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
 
 ## Birth-time fallback
 

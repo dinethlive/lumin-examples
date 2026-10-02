@@ -21,11 +21,18 @@ export type BirthInput = {
   horizonYears: number;
 };
 
-export type ResolvedLocation = {
+/** Where the model placed the birth city. It names the zone, never an offset. */
+export type ModelLocation = {
   latitude: number;
   longitude: number;
-  utcOffsetMinutes: number;
+  /** IANA name, such as "Asia/Colombo". Lumin reads the offset at birth from it. */
+  timeZone: string;
   note: string;
+};
+
+/** What the page shows. The route computes the offset at birth from the zone. */
+export type ResolvedLocation = ModelLocation & {
+  utcOffsetMinutes: number;
 };
 
 export type ConfidenceBand = "HIGH" | "MODERATE" | "LOW";
@@ -203,6 +210,11 @@ export type D10CrossSystem = {
   tenthLord: string;
   planetsInTenth: string[];
   strongestCareerPlanet: string;
+};
+
+/** The JSON the model writes, before the route adds the offset at birth. */
+export type CareerFitModelResponse = Omit<CareerFitResponse, "resolvedLocation"> & {
+  resolvedLocation: ModelLocation;
 };
 
 export type CareerFitResponse = {

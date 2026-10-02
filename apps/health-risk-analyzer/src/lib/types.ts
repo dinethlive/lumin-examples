@@ -28,11 +28,18 @@ export type BodySystem = {
   hue: string;
 };
 
-export type ResolvedLocation = {
+/** Where the model placed the birth city. It names the zone, never an offset. */
+export type ModelLocation = {
   latitude: number;
   longitude: number;
-  utc_offset_minutes: number;
+  /** IANA name, such as "Asia/Colombo". Lumin reads the offset at birth from it. */
+  time_zone: string;
   note: string;
+};
+
+/** What the page shows. The route computes the offset at birth from the zone. */
+export type ResolvedLocation = ModelLocation & {
+  utc_offset_minutes: number;
 };
 
 export type VitalityIndex = {
@@ -127,7 +134,7 @@ export type SaturnCycle = {
 };
 
 export type AnalysisResponse = {
-  resolved_location: ResolvedLocation;
+  resolved_location: ModelLocation;
   vitality_index: VitalityIndex;
   chart_confidence: ChartConfidence;
   constitutional_basis: ConstitutionalBasis;
@@ -143,7 +150,8 @@ export type AnalysisResponse = {
 
 export type SystemRiskHydrated = SystemRisk & { meta: BodySystem };
 
-export type AnalysisResponseHydrated = Omit<AnalysisResponse, "system_risks"> & {
+export type AnalysisResponseHydrated = Omit<AnalysisResponse, "system_risks" | "resolved_location"> & {
+  resolved_location: ResolvedLocation;
   system_risks: SystemRiskHydrated[];
 };
 

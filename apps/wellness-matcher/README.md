@@ -59,10 +59,11 @@ tools stay generic. The same pattern works for any vertical. To ship a new featu
 prompt and the catalog.
 
 The form asks for the birth city as free text, such as "Colombo, Sri Lanka", "Mumbai" or "Brooklyn,
-NY". The model resolves the city to coordinates and the historical UTC offset from its own
-geographic knowledge. So the demo needs no separate geocoding API. The response includes the
-resolved coordinates, so a visitor can check that the app used the right city. For production
-traffic, use a real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
+NY". The model resolves the city to coordinates and an IANA time zone from its own
+geographic knowledge. It never types a UTC offset, because Lumin reads the offset in force at birth
+from the zone. So the demo needs no separate geocoding API. The response shows the coordinates, the
+zone and the offset at birth, so a visitor can check that the app used the right city. For
+production traffic, use a real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
 
 ## Birth-time fallback
 

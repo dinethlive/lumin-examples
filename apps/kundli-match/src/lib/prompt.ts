@@ -1,4 +1,4 @@
-import type { MatchInput, PersonInput } from "./types";
+import type { ResolvedMatch, ResolvedPerson } from "./types";
 
 /**
  * The seven tools this app is allowed to call. Deny-by-default: the model can
@@ -23,10 +23,10 @@ export const ALLOWED_TOOLS = [
   "get_spouse_characteristics", // KP. Structured spouse description from the 7th CSL star lord. Run once per person
 ] as const;
 
-function personLine(label: string, p: PersonInput): string {
+function personLine(label: string, p: ResolvedPerson): string {
   return `${label}: ${p.name || "Anonymous"}, born ${p.birth_date} ${p.birth_time}${
     p.birth_time_known ? "" : " (time not known, defaulted to noon)"
-  } in ${p.location_name}, UTC offset ${p.utc_offset_minutes} minutes, gender ${p.gender}.`;
+  } in ${p.location_name} (time zone ${p.time_zone}), UTC offset at birth ${p.utc_offset_minutes} minutes, gender ${p.gender}.`;
 }
 
 export function buildSystemPrompt(): string {
@@ -103,7 +103,8 @@ Call order, 11 calls total:
 
 Resolve each person's location_name to latitude and longitude yourself, from
 your own knowledge. Use the utc_offset_minutes each person's input gives you
-exactly as given; do not recompute or guess it. When birth_time_known is
+exactly as given. The app read it from that person's time zone for the birth
+moment, so do not recompute or guess it. When birth_time_known is
 false, the input already defaulted birth_time to 12:00 noon.
 
 # Reading agreement across the three systems
@@ -240,7 +241,7 @@ a finding as a reason the relationship will or will not work; frame everything
 as one input among several a person might weigh.`;
 }
 
-export function buildUserPrompt(input: MatchInput): string {
+export function buildUserPrompt(input: ResolvedMatch): string {
   return `${personLine("Person A", input.personA)}
 ${personLine("Person B", input.personB)}
 

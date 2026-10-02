@@ -5,9 +5,11 @@ import {
   parseJsonBlock,
   ensureShape,
   LuminClientError,
+  isKnownTimeZone,
+  offsetMinutesAt,
 } from "@lumin-examples/client";
 import { ALLOWED_TOOLS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
-import type { MatchInput, MatchResponse, PersonInput } from "@/lib/types";
+import type { MatchResponse, PersonInput, ResolvedMatch, ResolvedPerson } from "@/lib/types";
 
 export const runtime = "nodejs";
 /** The loading copy promises 50 to 150 seconds for an 11-call read, so this has room above that. */
@@ -22,7 +24,7 @@ function badRequest(message: string) {
 const GENDERS = new Set(["female", "male", "other"]);
 
 /** Returns the parsed person, or a string naming what is wrong with it. */
-function validatePerson(label: string, body: unknown): PersonInput | string {
+function validatePerson(label: string, body: unknown): ResolvedPerson | string {
   if (typeof body !== "object" || body === null) return `${label} must be an object`;
   const b = body as Record<string, unknown>;
 
@@ -38,31 +40,32 @@ function validatePerson(label: string, body: unknown): PersonInput | string {
   if (typeof b.location_name !== "string" || !b.location_name.trim()) {
     return `${label}: location_name is required, for example "Colombo, Sri Lanka"`;
   }
-  // The offset feeds the Ascendant directly, so it is required rather than
-  // resolved by the model. See PersonInput.utc_offset_minutes.
-  if (
-    typeof b.utc_offset_minutes !== "number" ||
-    !Number.isFinite(b.utc_offset_minutes) ||
-    b.utc_offset_minutes < -720 ||
-    b.utc_offset_minutes > 840
-  ) {
-    return `${label}: utc_offset_minutes is required and must be between -720 and 840`;
+  if (typeof b.time_zone !== "string" || !isKnownTimeZone(b.time_zone)) {
+    return `${label}: time_zone is required, an IANA name such as "Asia/Colombo"`;
   }
   const gender = typeof b.gender === "string" ? b.gender : "other";
   if (!GENDERS.has(gender)) return `${label}: gender must be female, male or other`;
 
+  // The offset at birth feeds the Ascendant directly, so it comes from the tz
+  // database for this person's zone and birth moment, never from a guess. The
+  // nested partner and person2 objects take a number, so the route computes it.
+  const birthTime = b.birth_time_known ? b.birth_time : "12:00";
+  const offset = offsetMinutesAt(b.time_zone, `${b.birth_date}T${birthTime}:00`);
+  if (offset === null) return `${label}: the UTC offset at birth could not be read from time_zone`;
+
   return {
     name: typeof b.name === "string" ? b.name.trim().slice(0, 80) : "",
     birth_date: b.birth_date,
-    birth_time: b.birth_time_known ? b.birth_time : "12:00",
+    birth_time: birthTime,
     birth_time_known: b.birth_time_known,
     location_name: b.location_name.trim().slice(0, 120),
-    utc_offset_minutes: Math.round(b.utc_offset_minutes),
+    time_zone: b.time_zone,
+    utc_offset_minutes: Math.round(offset * 100) / 100,
     gender: gender as PersonInput["gender"],
   };
 }
 
-function validateInput(body: unknown): MatchInput | string {
+function validateInput(body: unknown): ResolvedMatch | string {
   if (typeof body !== "object" || body === null) return "Body must be a JSON object";
   const b = body as Record<string, unknown>;
 

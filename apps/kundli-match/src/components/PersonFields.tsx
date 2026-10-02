@@ -1,6 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { formatUtcOffset, isKnownTimeZone, offsetMinutesAt } from "@lumin-examples/client/zone";
 import type { PersonInput } from "@/lib/types";
+
+/** The id of the zone suggestions that MatchForm renders once for both people. */
+export const TIME_ZONE_LIST_ID = "time-zones";
 
 type Props = {
   label: string;
@@ -77,21 +82,19 @@ export function PersonFields({ label, value, onChange, disabled }: Props) {
 
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-black/70">
-            UTC offset in minutes
+            Birth time zone
           </span>
           <input
-            type="number"
-            value={value.utc_offset_minutes}
-            onChange={(e) => set("utc_offset_minutes", Number(e.target.value))}
-            min={-720}
-            max={840}
+            value={value.time_zone}
+            onChange={(e) => set("time_zone", e.target.value.trim())}
+            list={TIME_ZONE_LIST_ID}
+            placeholder="e.g. Asia/Colombo"
             required
-            className="min-h-[44px] w-full max-w-[200px] rounded-lg bg-white px-3 py-2 ring-1 ring-black/[0.08] outline-none focus:ring-2 focus:ring-black/20"
+            autoComplete="off"
+            spellCheck={false}
+            className="min-h-[44px] w-full max-w-[280px] rounded-lg bg-white px-3 py-2 ring-1 ring-black/[0.08] outline-none focus:ring-2 focus:ring-black/20"
           />
-          <span className="mt-1.5 block text-xs text-black/50">
-            330 for India and Sri Lanka, -300 for US Eastern. This feeds the Ascendant
-            directly, so it is asked for rather than guessed.
-          </span>
+          <span className="mt-1.5 block text-xs text-black/50">{zoneHint(value)}</span>
         </label>
 
         <label className="block">
@@ -119,6 +122,38 @@ export function PersonFields({ label, value, onChange, disabled }: Props) {
   );
 }
 
+/**
+ * What clocks read in the chosen zone at this birth moment. The offset at birth
+ * feeds the Ascendant directly, so showing it lets a wrong zone show itself.
+ */
+function zoneHint(p: PersonInput): string {
+  if (!isKnownTimeZone(p.time_zone)) {
+    return "Use an IANA name, such as Asia/Colombo, Asia/Kolkata or America/New_York.";
+  }
+  const time = p.birth_time_known && p.birth_time ? p.birth_time : "12:00";
+  const offset = offsetMinutesAt(p.time_zone, `${p.birth_date}T${time}:00`);
+  if (offset === null) return "Enter the birth date to see the offset at birth.";
+  return `Clocks there read UTC${formatUtcOffset(offset)} at that birth date and time.`;
+}
+
+/**
+ * The zone names the browser knows, offered as suggestions. Filled after mount,
+ * because the server and the browser can carry different zone lists.
+ */
+export function TimeZoneList() {
+  const [zones, setZones] = useState<string[]>([]);
+  useEffect(() => {
+    setZones(Intl.supportedValuesOf("timeZone"));
+  }, []);
+  return (
+    <datalist id={TIME_ZONE_LIST_ID}>
+      {zones.map((zone) => (
+        <option key={zone} value={zone} />
+      ))}
+    </datalist>
+  );
+}
+
 export function defaultPerson(name: string): PersonInput {
   return {
     name,
@@ -126,7 +161,7 @@ export function defaultPerson(name: string): PersonInput {
     birth_time: "08:15",
     birth_time_known: true,
     location_name: "",
-    utc_offset_minutes: 330,
+    time_zone: "Asia/Colombo",
     gender: "other",
   };
 }

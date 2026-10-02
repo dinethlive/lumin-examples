@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatUtcOffset } from "@lumin-examples/client/zone";
 import { Hero } from "@/components/Hero";
 import { IntakeForm } from "@/components/IntakeForm";
 import { VitalityCard } from "@/components/VitalityCard";
@@ -158,14 +159,14 @@ function ResolvedLocationCaption({
 }) {
   const lat = formatCoord(resolved.latitude, "N", "S");
   const lng = formatCoord(resolved.longitude, "E", "W");
-  const offset = formatOffset(resolved.utc_offset_minutes);
+  const offset = formatUtcOffset(resolved.utc_offset_minutes);
   return (
     <div className="fade-up mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
       <span className="font-medium tracking-[0.16em] uppercase text-primary">
         Chart cast for
       </span>
       <span className="font-mono">
-        {lat}, {lng} · UTC{offset}
+        {lat}, {lng} · {resolved.time_zone}, UTC{offset} at birth
       </span>
       {resolved.note && (
         <span className="text-muted-foreground/80">· {resolved.note}</span>
@@ -179,13 +180,6 @@ function formatCoord(value: number, pos: string, neg: string): string {
   return `${Math.abs(value).toFixed(2)}°${dir}`;
 }
 
-function formatOffset(minutes: number): string {
-  const sign = minutes >= 0 ? "+" : "-";
-  const abs = Math.abs(minutes);
-  const hh = String(Math.floor(abs / 60)).padStart(2, "0");
-  const mm = String(abs % 60).padStart(2, "0");
-  return `${sign}${hh}:${mm}`;
-}
 
 function Footer() {
   return (

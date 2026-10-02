@@ -78,15 +78,21 @@ Details that cost time when they are wrong:
 - API keys go to `/mcp`. The `/mcp/auth` endpoint is OAuth only and rejects a key.
 - Lumin's 429 arrives as tool-result text, not as an HTTP status. The client detects it and throws
   `lumin_rate_limited` with `retryAfterSeconds`. Lumin does not meter failed calls.
-- The apps send birth data as five fields:
+- Birth data has these fields:
   - `birth_datetime`, as `YYYY-MM-DDTHH:MM:SS` on the local clock at the birthplace.
   - `latitude` and `longitude`.
-  - `utc_offset_minutes`, the offset in force at birth, not today's.
+  - `time_zone`, an IANA name such as `Asia/Colombo`. The server reads the offset in force at
+    birth from it.
   - `ayanamsa`, `kp` unless the user chose another.
 
-  The server also takes `time_zone`, an IANA name such as `Asia/Colombo`, in place of
-  `utc_offset_minutes`. With `time_zone`, the server finds the offset in force on the birth date
-  itself.
+  Never let the model type a birth offset. It often types today's offset, and 30 minutes moves the
+  Ascendant about 7 degrees. Some fields still take a number:
+  - the nested `person2` and `partner` charts, and both people in `get_compatibility_advanced`
+  - the event offset on the electional tools
+  - the day-frame tools, such as `get_choghadiya_today`
+
+  For a birth offset in one of those, compute it with `offsetMinutesAt`, as `kundli-match` does.
+  Always send an event offset. If you leave it out, the server uses the offset at birth.
 - To call the server directly from curl or a script, POST JSON-RPC to `/mcp`. Send
   `Authorization: Bearer mcp_...` and `Accept: application/json, text/event-stream`. The server
   refuses a request that does not accept both types.
@@ -146,7 +152,9 @@ result. `kp-paging`, `kp-electional` and `kp-horary` load when the work touches 
 ## Where things are
 
 - `USE-CASES.md`: the product catalog, verticals A to S, each use case naming its tools.
-- `packages/lumin-client`: `runLumin`, `logRun`, `parseJsonBlock`, `ensureShape`, `LuminClientError`.
+- `packages/lumin-client`: `runLumin`, `logRun`, `parseJsonBlock`, `ensureShape`, `LuminClientError`,
+  and the zone helpers `offsetMinutesAt`, `isKnownTimeZone` and `formatUtcOffset`. Browser code
+  imports the helpers from `@lumin-examples/client/zone`, which does not load the model SDK.
 - `scripts/check-tool-names.mjs` and `scripts/tool-names.json`: the tool-name check and its snapshot.
 - [docs.lumin.guru/build](https://docs.lumin.guru/build): the developer track, one page per tool.
 - [lumin.guru/pricing](https://lumin.guru/pricing): the free monthly allowance and the call packs.

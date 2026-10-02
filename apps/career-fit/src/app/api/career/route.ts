@@ -5,9 +5,11 @@ import {
   parseJsonBlock,
   ensureShape,
   LuminClientError,
+  isKnownTimeZone,
+  offsetMinutesAt,
 } from "@lumin-examples/client";
-import { ALLOWED_TOOLS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
-import type { BirthInput, CareerFitResponse } from "@/lib/types";
+import { ALLOWED_TOOLS, birthDatetime, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
+import type { BirthInput, CareerFitModelResponse, CareerFitResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
 /**
@@ -81,9 +83,14 @@ function validateWindow(w: unknown): string | null {
   return null;
 }
 
-function validateShape(data: CareerFitResponse): string | null {
-  if (!data.resolvedLocation || typeof data.resolvedLocation.latitude !== "number") {
-    return "response is missing a resolved location";
+function validateShape(data: CareerFitModelResponse): string | null {
+  if (
+    !data.resolvedLocation ||
+    typeof data.resolvedLocation.latitude !== "number" ||
+    typeof data.resolvedLocation.longitude !== "number" ||
+    !isKnownTimeZone(data.resolvedLocation.timeZone)
+  ) {
+    return "response is missing a resolved location with a known time zone";
   }
   if (!data.audit || !BANDS.has(data.audit.band)) {
     return "response is missing or has an invalid audit.band";
@@ -205,10 +212,21 @@ export async function POST(req: NextRequest) {
     logRun(ROUTE, result);
 
     const data = ensureShape(
-      parseJsonBlock<CareerFitResponse>(result.text),
+      parseJsonBlock<CareerFitModelResponse>(result.text),
       validateShape,
     );
-    return NextResponse.json(data);
+
+    // The model names the zone. The offset at birth comes from the tz database,
+    // the same reading Lumin made from that zone.
+    const offsetAtBirth = offsetMinutesAt(data.resolvedLocation.timeZone, birthDatetime(input));
+    if (offsetAtBirth === null) {
+      throw new LuminClientError("invalid_shape", "Could not read the offset at birth from the time zone");
+    }
+    const response: CareerFitResponse = {
+      ...data,
+      resolvedLocation: { ...data.resolvedLocation, utcOffsetMinutes: offsetAtBirth },
+    };
+    return NextResponse.json(response);
   } catch (err) {
     if (err instanceof LuminClientError) {
       console.error(

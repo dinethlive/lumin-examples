@@ -52,17 +52,19 @@ The customer provides their birth city as free text (for example "Colombo, Sri L
 
 - latitude (decimal degrees, north positive)
 - longitude (decimal degrees, east positive)
-- utc_offset_minutes (the offset that was IN EFFECT AT THE BIRTH DATE; historical timezone matters: India was +05:30 from 1955 onward but earlier dates differ; Sri Lanka has switched between +05:30, +06:30, and +06:00; many countries observe DST)
+- time_zone (the IANA time zone name of the birthplace, for example "Asia/Colombo", "Asia/Kolkata" or "America/New_York")
 
-Use the country in the input to disambiguate same-named cities (Colombo, Sri Lanka vs Colombo, Brazil). If the customer omits a country, default to the largest match and note your assumption. If the city is unrecognizable, use 0/0/0 and explain in the note.
+Do not work out a UTC offset yourself. Lumin reads the offset in force at the birth date and time from the time zone, with daylight saving and past changes included. Sri Lanka alone has used +05:30, +06:30 and +06:00. A typed offset is often today's offset, and 30 minutes moves the Ascendant about 7 degrees.
 
-These resolved values then feed every Lumin tool call as latitude, longitude, utc_offset_minutes. Do not skip this step.
+Use the country in the input to disambiguate same-named cities (Colombo, Sri Lanka vs Colombo, Brazil). If the customer omits a country, default to the largest match and note your assumption. If the city is unrecognizable, use latitude 0, longitude 0 and time_zone "Etc/UTC", and explain in the note.
+
+These resolved values then feed every Lumin tool call as latitude, longitude and time_zone. Never send utc_offset_minutes. Do not skip this step.
 
 # Step 1. Fetch the chart
 
 Call all nine tools listed above together, not one at a time; they are independent. Use get_shadbala's totals to judge which dosha-carrying planet is genuinely strong, not merely present.
 
-Pass to every tool call: birth_datetime, latitude, longitude, utc_offset_minutes (from Step 0), and ayanamsa: "kp".
+Pass to every tool call: birth_datetime, latitude, longitude, time_zone (from Step 0), and ayanamsa: "kp".
 
 # Step 2. Derive Ayurvedic prakriti
 
@@ -113,8 +115,8 @@ Return STRICTLY this JSON shape. No prose, no markdown fences, no preamble.
   "resolved_location": {
     "latitude": <number>,
     "longitude": <number>,
-    "utc_offset_minutes": <integer>,
-    "note": "<short explanation of how you resolved the city, e.g. 'Colombo, Sri Lanka, IST +05:30 in 1995'>"
+    "time_zone": "<IANA name, such as Asia/Colombo>",
+    "note": "<short explanation of how you resolved the city, e.g. 'Colombo, Sri Lanka, Asia/Colombo'>"
   },
   "prakriti": { "primary": "pitta", "secondary": "vata", "label": "Pitta-Vata" },
   "dosha_balance": { "vata": <0-100 int>, "pitta": <0-100 int>, "kapha": <0-100 int> },
@@ -131,7 +133,7 @@ Return STRICTLY this JSON shape. No prose, no markdown fences, no preamble.
 Set "disclaimer" to exactly:
 "A hybrid discussion starter, not a clinical Ayurvedic prakriti reading and not standalone health advice. It is a supplementary lens only, blending a KP chart read with the Vedic Parashari get_ayurvedic_constitution mapping."
 
-Exactly 4 entries in matches. Product IDs must match the catalog exactly. "primary" and "secondary" must be one of: "vata", "pitta", "kapha". "secondary" may be null. utc_offset_minutes must be an integer (e.g. 330 for IST, 0 for UTC, -300 for EST). dosha_balance must contain integer percentages for vata, pitta, and kapha that sum to 100. constitution_drivers must contain exactly 3 entries; each "dosha" is one of "vata", "pitta", "kapha" and each "strength" is an integer 0 to 100. disclaimer matches the string above exactly.
+Exactly 4 entries in matches. Product IDs must match the catalog exactly. "primary" and "secondary" must be one of: "vata", "pitta", "kapha". "secondary" may be null. time_zone must be an IANA name (e.g. "Asia/Kolkata", "Etc/UTC", "America/New_York"). dosha_balance must contain integer percentages for vata, pitta, and kapha that sum to 100. constitution_drivers must contain exactly 3 entries; each "dosha" is one of "vata", "pitta", "kapha" and each "strength" is an integer 0 to 100. disclaimer matches the string above exactly.
 
 # Birth-time fallback
 
@@ -153,8 +155,13 @@ ${PRODUCT_LINES}
 Return ONLY the JSON object. No backticks, no "Here's the response:", no commentary outside the JSON. The matches array must contain exactly 4 entries with valid catalog IDs. resolved_location must be filled in.`;
 }
 
+/** The birth moment as the local wall clock at the birthplace, the form Lumin reads. */
+export function birthDatetime(input: BirthInput): string {
+  return `${input.birth_date}T${input.birth_time}:00`;
+}
+
 export function buildUserPrompt(input: BirthInput): string {
-  const birth_datetime = `${input.birth_date}T${input.birth_time}:00`;
+  const birth_datetime = birthDatetime(input);
   return `Customer profile:
 - Name: ${input.name || "Anonymous"}
 - Biological sex: ${input.biological_sex}
@@ -166,7 +173,7 @@ Birth datetime in ISO format (without timezone): "${birth_datetime}"
 ayanamsa: "kp"
 birth_time_known: ${input.birth_time_known}
 
-Resolve the birth city to coordinates and UTC offset (Step 0), then compute the customer's Ayurvedic prakriti from their chart and return 4 product matches from the catalog. If biological_sex is "female", consider menstrual and hormonal balance when picking products that pacify the dominant dosha; if "male", lean toward grounding and post-exertion recovery framing; if "unspecified", remain neutral. Never assume identity or stereotype outside this hint. Output JSON only: no preamble, no fences.
+Resolve the birth city to coordinates and a time zone (Step 0), then compute the customer's Ayurvedic prakriti from their chart and return 4 product matches from the catalog. If biological_sex is "female", consider menstrual and hormonal balance when picking products that pacify the dominant dosha; if "male", lean toward grounding and post-exertion recovery framing; if "unspecified", remain neutral. Never assume identity or stereotype outside this hint. Output JSON only: no preamble, no fences.
 
 # Brand voice
 

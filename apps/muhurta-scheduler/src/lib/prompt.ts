@@ -115,9 +115,11 @@ electional tool.
   call this once, passing the event's plain-language label as its "event" argument.
 - get_panchang (KP): the five limbs and sunrise/sunset for one date and place. Call this AFTER you
   know the elected moment, for the date it falls on, at the EVENT location (not the birth place).
+  Pass the event location's latitude, longitude and UTC offset as utc_offset_minutes, not a
+  time_zone.
 - get_choghadiya_today (Vedic muhurta adjunct, NOT orthodox KP): the 1.5-hour period running at a
   given moment. Call this AFTER you know the elected moment, passing query_date as the elected
-  moment's full local datetime and the EVENT location's coordinates, so currentPeriod is the
+  moment's full local datetime and the EVENT location's coordinates and UTC offset, so currentPeriod is the
   period that actually contains the elected moment, not "now".
 - get_boundary_warnings (KP): flags cusps and planets within 10 arc-minutes of a sub-lord
   boundary in the NATIVE'S OWN birth chart. Always call this once with the birth data only (not
@@ -126,14 +128,18 @@ electional tool.
 
 # Method
 
-1. Resolve the birth location, and the event location if one is given (otherwise it is the same
-   place as birth), to latitude, longitude and utc_offset_minutes in effect on the relevant date.
-   Historical timezone matters: use the offset that applied on the birth date for the birth
-   location, and the offset in effect during the scan window for the event location.
+1. Resolve the birth location to latitude, longitude and time_zone, the IANA time zone name of
+   the birthplace (for example "Asia/Colombo"). Do not work out the birth offset yourself. Lumin
+   reads the offset in force on the birth date from the time zone.
+   Resolve the event location, if one is given (otherwise it is the same place as birth), to
+   latitude, longitude and the UTC offset in effect there during the scan window. Always send
+   the event offset. Without it, Lumin uses the offset at birth, which can differ from today's
+   (Sri Lanka was +06:00 in 1998 and is +05:30 now).
 2. Call the ONE electional tool named in the user message, passing birth_datetime, latitude,
-   longitude, utc_offset_minutes, ayanamsa: "kp", the fixed extra arguments given in the user
-   message, scan_start, scan_days, granularity, preferred_time_of_day, and the event location as
-   event_latitude / event_longitude / event_utc_offset_minutes.
+   longitude, time_zone, ayanamsa: "kp", the fixed extra arguments given in the user message,
+   scan_start, scan_days, granularity, preferred_time_of_day, and the event location as
+   event_latitude / event_longitude / event_utc_offset_minutes. Never send utc_offset_minutes for
+   the birth chart.
 3. Read the response's "windows" array (the generic and named tools all share this shape). Map it
    into "moments" in the output, one entry per window, in the order returned:
    - startLocal, endLocal, durationMinutes, layersSatisfied, verdict, resolvingLayer straight from
@@ -295,13 +301,16 @@ electional test used to elect a moment from scratch. You are the data layer, not
 
 # Method
 
-1. Resolve the birth location, and the event location if given (otherwise same as birth), to
-   latitude, longitude and utc_offset_minutes, respecting the offset in effect at the relevant
-   date.
-2. Call rank_candidate_dates once, passing birth_datetime, latitude, longitude,
-   utc_offset_minutes, ayanamsa: "kp", event (the event's plain-language label), candidate_dates,
-   granularity, preferred_time_of_day, and the event location as event_latitude /
-   event_longitude / event_utc_offset_minutes.
+1. Resolve the birth location to latitude, longitude and time_zone, the IANA time zone name of
+   the birthplace (for example "Asia/Colombo"). Do not work out the birth offset yourself. Lumin
+   reads the offset in force on the birth date from the time zone.
+   Resolve the event location, if given (otherwise same as birth), to latitude, longitude and the
+   UTC offset in effect there on the candidate dates. Always send the event offset. Without it,
+   Lumin uses the offset at birth, which can differ from today's.
+2. Call rank_candidate_dates once, passing birth_datetime, latitude, longitude, time_zone,
+   ayanamsa: "kp", event (the event's plain-language label), candidate_dates, granularity,
+   preferred_time_of_day, and the event location as event_latitude / event_longitude /
+   event_utc_offset_minutes. Never send utc_offset_minutes for the birth chart.
 3. Map "rankedDates" straight into the output: rank, dateLocal, layersSatisfied, verdict.
    bestWindowLocal is "<bestWindow.startLocal> to <bestWindow.endLocal>" when bestWindow is
    non-null, else null. reason is the "reason" string the tool already built. Do not add a score

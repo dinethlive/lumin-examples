@@ -55,17 +55,19 @@ them in the chart signals or the summary, never as a KP finding.
 The customer provides their birth city as free text (for example "Colombo, Sri Lanka", "Mumbai", "London, UK"). Before any tool call, resolve the city to:
 - latitude (decimal degrees, north positive)
 - longitude (decimal degrees, east positive)
-- utc_offset_minutes (the offset that was IN EFFECT AT THE BIRTH DATE; historical timezone matters: India was +05:30 from 1955 onward but earlier dates differ; Sri Lanka has switched between +05:30, +06:30, and +06:00; many countries observe DST)
+- time_zone (the IANA time zone name of the birthplace, for example "Asia/Colombo", "Asia/Kolkata" or "America/New_York")
 
-Use the country in the input to disambiguate same-named cities. If the customer omits a country, default to the largest match and note your assumption. If the city is unrecognizable, use 0/0/0 and explain in the note.
+Do not work out a UTC offset yourself. Lumin reads the offset in force at the birth date and time from the time zone, with daylight saving and past changes included. Sri Lanka alone has used +05:30, +06:30 and +06:00. A typed offset is often today's offset, and 30 minutes moves the Ascendant about 7 degrees.
 
-These resolved values then feed every Lumin tool call as latitude, longitude, utc_offset_minutes. Do not skip this step.
+Use the country in the input to disambiguate same-named cities. If the customer omits a country, default to the largest match and note your assumption. If the city is unrecognizable, use latitude 0, longitude 0 and time_zone "Etc/UTC", and explain in the note.
+
+These resolved values then feed every Lumin tool call as latitude, longitude and time_zone. Never send utc_offset_minutes. Do not skip this step.
 
 # Step 1. Fetch the chart
 
 Call all eleven tools listed above together, not one at a time; they are independent. Read how the money planets (Jupiter, Venus, Sun, Mercury) and the Moon fall across the two horas from get_d2_chart to gauge the shopper's spending posture, premium-leaning versus value-leaning.
 
-Pass to every tool call: birth_datetime, latitude, longitude, utc_offset_minutes (from Step 0), and ayanamsa: "kp".
+Pass to every tool call: birth_datetime, latitude, longitude, time_zone (from Step 0), and ayanamsa: "kp".
 
 # Step 2. Derive consumer personality
 
@@ -156,8 +158,8 @@ Return STRICTLY this JSON shape. No prose, no markdown fences, no preamble.
   "resolved_location": {
     "latitude": <number>,
     "longitude": <number>,
-    "utc_offset_minutes": <integer>,
-    "note": "<short note: how you resolved the city, e.g. 'Colombo, Sri Lanka, IST +05:30 in 1995'>"
+    "time_zone": "<IANA name, such as Asia/Colombo>",
+    "note": "<short note: how you resolved the city, e.g. 'Colombo, Sri Lanka, Asia/Colombo'>"
   },
   "personality": {
     "label": "<2-word descriptive label, e.g. 'Warm & Elegant', 'Intellectual & Practical', 'Traditional & Nurturing'>",
@@ -176,7 +178,7 @@ Return STRICTLY this JSON shape. No prose, no markdown fences, no preamble.
 Set "disclaimer" to exactly:
 "A curiosity and personalization layer, not a financial or psychometric assessment. It blends a KP chart read with Vedic Parashari and Jaimini cross-system references, named as such in the chart signals above."
 
-Exactly 5 entries in matches. Product IDs must match the catalog exactly. Each trait in personality.traits must be one of: warm, intellectual, luxurious, traditional, homebody, elegant, practical, celebratory, nurturing, playful. personality.signals must contain 2 to 4 entries. utc_offset_minutes must be an integer. disclaimer matches the string above exactly.
+Exactly 5 entries in matches. Product IDs must match the catalog exactly. Each trait in personality.traits must be one of: warm, intellectual, luxurious, traditional, homebody, elegant, practical, celebratory, nurturing, playful. personality.signals must contain 2 to 4 entries. time_zone must be an IANA name, such as Asia/Kolkata. disclaimer matches the string above exactly.
 
 # Birth-time fallback
 
@@ -198,8 +200,13 @@ ${PRODUCT_LINES}
 Return ONLY the JSON object. No backticks, no "Here's the response:", no commentary outside the JSON. The matches array must contain exactly 5 entries with valid catalog IDs. resolved_location must be filled in.`;
 }
 
+/** The birth moment as the local wall clock at the birthplace, the form Lumin reads. */
+export function birthDatetime(input: BirthInput): string {
+  return `${input.birth_date}T${input.birth_time}:00`;
+}
+
 export function buildUserPrompt(input: BirthInput): string {
-  const birth_datetime = `${input.birth_date}T${input.birth_time}:00`;
+  const birth_datetime = birthDatetime(input);
   return `Customer profile:
 - Name: ${input.name || "Anonymous"}
 - Biological sex: ${input.biological_sex}
@@ -211,7 +218,7 @@ Birth datetime in ISO format (without timezone): "${birth_datetime}"
 ayanamsa: "kp"
 birth_time_known: ${input.birth_time_known}
 
-Resolve the birth city to coordinates and UTC offset (Step 0), then derive the customer's consumer personality from their chart and return 5 product matches from the catalog. If biological_sex is "female" or "male", lightly bias gendered categories (jewelry, fashion, fragrance) toward the customer; if "unspecified", keep the catalog gender-neutral. Never assume or stereotype outside this hint. Output JSON only: no preamble, no fences.
+Resolve the birth city to coordinates and a time zone (Step 0), then derive the customer's consumer personality from their chart and return 5 product matches from the catalog. If biological_sex is "female" or "male", lightly bias gendered categories (jewelry, fashion, fragrance) toward the customer; if "unspecified", keep the catalog gender-neutral. Never assume or stereotype outside this hint. Output JSON only: no preamble, no fences.
 
 # Brand voice
 

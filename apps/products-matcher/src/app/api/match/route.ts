@@ -5,15 +5,17 @@ import {
   parseJsonBlock,
   ensureShape,
   LuminClientError,
+  isKnownTimeZone,
+  offsetMinutesAt,
 } from "@lumin-examples/client";
-import { ALLOWED_TOOLS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
+import { ALLOWED_TOOLS, birthDatetime, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
 import { getProduct } from "@/lib/catalog";
 import type {
   BirthInput,
   Match,
   MatchResponse,
   Personality,
-  ResolvedLocation,
+  ModelLocation,
 } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -57,7 +59,7 @@ function validateInput(body: unknown): BirthInput | string {
 }
 
 type ParsedResult = {
-  resolved_location: ResolvedLocation;
+  resolved_location: ModelLocation;
   personality: Personality;
   matches: Match[];
   disclaimer: string;
@@ -69,7 +71,7 @@ function validateShape(data: ParsedResult): string | null {
     !data.resolved_location ||
     typeof data.resolved_location.latitude !== "number" ||
     typeof data.resolved_location.longitude !== "number" ||
-    typeof data.resolved_location.utc_offset_minutes !== "number"
+    !isKnownTimeZone(data.resolved_location.time_zone)
   ) {
     return "Response missing resolved_location";
   }
@@ -130,8 +132,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // The model names the zone. The offset at birth comes from the tz database,
+    // the same reading Lumin made from that zone.
+    const offsetAtBirth = offsetMinutesAt(parsed.resolved_location.time_zone, birthDatetime(input));
+    if (offsetAtBirth === null) {
+      throw new LuminClientError("invalid_shape", "Could not read the offset at birth from the time zone");
+    }
+
     const response: MatchResponse = {
-      resolved_location: parsed.resolved_location,
+      resolved_location: { ...parsed.resolved_location, utc_offset_minutes: offsetAtBirth },
       personality: parsed.personality,
       matches: hydratedMatches,
       disclaimer: parsed.disclaimer,

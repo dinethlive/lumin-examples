@@ -9,3 +9,4 @@ export {
 } from "./client";
 export { parseJsonBlock, ensureShape } from "./json";
 export { LuminClientError, type LuminFailure } from "./errors";
+export { isKnownTimeZone, offsetMinutesAt, formatUtcOffset } from "./zone";

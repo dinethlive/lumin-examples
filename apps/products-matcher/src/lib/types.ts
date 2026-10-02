@@ -53,11 +53,18 @@ export type Match = {
   reason: string;
 };
 
-export type ResolvedLocation = {
+/** Where the model placed the birth city. It names the zone, never an offset. */
+export type ModelLocation = {
   latitude: number;
   longitude: number;
-  utc_offset_minutes: number;
+  /** IANA name, such as "Asia/Colombo". Lumin reads the offset at birth from it. */
+  time_zone: string;
   note: string;
+};
+
+/** What the page shows. The route computes the offset at birth from the zone. */
+export type ResolvedLocation = ModelLocation & {
+  utc_offset_minutes: number;
 };
 
 export type MatchResponse = {

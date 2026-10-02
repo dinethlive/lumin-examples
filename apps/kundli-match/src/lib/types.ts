@@ -23,19 +23,31 @@ export type PersonInput = {
   /** Free text, e.g. "Colombo, Sri Lanka". The model resolves it to coordinates. */
   location_name: string;
   /**
-   * Minutes east of UTC, given directly rather than resolved by the model.
-   * A KP cuspal sub lord can flip on a boundary a few arc-minutes wide (see
-   * get_boundary_warnings), and the offset feeds the Ascendant calculation
-   * directly, so a model's guess at a historical timezone is not good enough
-   * here the way it can be for a lower-stakes lookup.
+   * IANA time zone of the birthplace, such as "Asia/Colombo". The route reads
+   * the offset at birth from it. A KP cuspal sub lord can flip on a boundary a
+   * few arc-minutes wide (see get_boundary_warnings), and the offset feeds the
+   * Ascendant directly. A model's guess at a historical offset is not good
+   * enough here, and neither is a typed one, which is often today's offset.
    */
-  utc_offset_minutes: number;
+  time_zone: string;
   gender: Gender;
+};
+
+/** A person after the route read the offset at birth from their time zone. */
+export type ResolvedPerson = PersonInput & {
+  /** Minutes east of UTC in force at the birth moment, from the tz database. */
+  utc_offset_minutes: number;
 };
 
 export type MatchInput = {
   personA: PersonInput;
   personB: PersonInput;
+};
+
+/** What the prompt is built from: both people with their offsets at birth. */
+export type ResolvedMatch = {
+  personA: ResolvedPerson;
+  personB: ResolvedPerson;
 };
 
 export type Recommendation = "STRONG" | "WORKABLE" | "REVIEW";

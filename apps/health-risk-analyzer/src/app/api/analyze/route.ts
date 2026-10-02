@@ -5,8 +5,10 @@ import {
   parseJsonBlock,
   ensureShape,
   LuminClientError,
+  isKnownTimeZone,
+  offsetMinutesAt,
 } from "@lumin-examples/client";
-import { ALLOWED_TOOLS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
+import { ALLOWED_TOOLS, birthDatetime, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
 import { getBodySystem } from "@/lib/body-systems";
 import type {
   AnalysisResponse,
@@ -79,7 +81,7 @@ function validateShape(data: AnalysisResponse): string | null {
     !data.resolved_location ||
     typeof data.resolved_location.latitude !== "number" ||
     typeof data.resolved_location.longitude !== "number" ||
-    typeof data.resolved_location.utc_offset_minutes !== "number"
+    !isKnownTimeZone(data.resolved_location.time_zone)
   ) {
     return "Response missing resolved_location";
   }
@@ -131,7 +133,10 @@ function validateShape(data: AnalysisResponse): string | null {
   return null;
 }
 
-function hydrate(parsed: AnalysisResponse): AnalysisResponseHydrated | string {
+function hydrate(
+  parsed: AnalysisResponse,
+  offsetAtBirth: number,
+): AnalysisResponseHydrated | string {
   const hydratedRisks: SystemRiskHydrated[] = [];
   for (const r of parsed.system_risks as SystemRisk[]) {
     const meta = getBodySystem(r.system);
@@ -141,7 +146,11 @@ function hydrate(parsed: AnalysisResponse): AnalysisResponseHydrated | string {
   hydratedRisks.sort(
     (a, b) => VALID_SYSTEMS.indexOf(a.system) - VALID_SYSTEMS.indexOf(b.system),
   );
-  return { ...parsed, system_risks: hydratedRisks };
+  return {
+    ...parsed,
+    resolved_location: { ...parsed.resolved_location, utc_offset_minutes: offsetAtBirth },
+    system_risks: hydratedRisks,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -177,7 +186,14 @@ export async function POST(req: NextRequest) {
       validateShape,
     );
 
-    const hydrated = hydrate(parsed);
+    // The model names the zone. The offset at birth comes from the tz database,
+    // the same reading Lumin made from that zone.
+    const offsetAtBirth = offsetMinutesAt(parsed.resolved_location.time_zone, birthDatetime(input));
+    if (offsetAtBirth === null) {
+      throw new LuminClientError("invalid_shape", "Could not read the offset at birth from the time zone");
+    }
+
+    const hydrated = hydrate(parsed, offsetAtBirth);
     if (typeof hydrated === "string") {
       throw new LuminClientError("invalid_shape", hydrated);
     }

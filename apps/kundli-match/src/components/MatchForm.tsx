@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PersonFields, defaultPerson } from "./PersonFields";
+import { PersonFields, TimeZoneList, defaultPerson } from "./PersonFields";
 import type { MatchInput, MatchResponse } from "@/lib/types";
 
 /** Named phases, so a 50 to 150 second wait shows progress instead of a spinner. */
@@ -94,6 +94,7 @@ export function MatchForm({ onResult }: Props) {
           onChange={setPersonB}
           disabled={loading}
         />
+        <TimeZoneList />
       </div>
 
       <button

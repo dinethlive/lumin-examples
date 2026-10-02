@@ -49,11 +49,18 @@ own knowledge to:
 
 - latitude (decimal degrees, north positive)
 - longitude (decimal degrees, east positive)
-- utc_offset_minutes (the offset IN EFFECT AT THE BIRTH DATE; historical
-  timezones matter, use the country to disambiguate same-named cities)
+- time_zone (the IANA time zone name of the birthplace, for example
+  "Asia/Colombo", "Asia/Kolkata" or "America/Chicago"). Use the country to
+  disambiguate same-named cities.
 
-Pass these plus birth_datetime (ISO 8601, no timezone suffix) and
-ayanamsa: "kp" to every tool below.
+Do not work out a UTC offset yourself. Lumin reads the offset in force at the
+birth date and time from the time zone, with daylight saving and past changes
+included. A typed offset is often today's offset, and 30 minutes moves the
+Ascendant about 7 degrees.
+
+Pass latitude, longitude and time_zone, plus birth_datetime (ISO 8601, no
+timezone suffix) and ayanamsa: "kp", to every tool below. Never send
+utc_offset_minutes.
 
 # Tools
 
@@ -193,7 +200,7 @@ Return ONLY a JSON object. No prose before or after, no code fence. Every
 the actual dates a timing tool returned for that window.
 
 {
-  "resolvedLocation": { "latitude": number, "longitude": number, "utcOffsetMinutes": number, "note": string },
+  "resolvedLocation": { "latitude": number, "longitude": number, "timeZone": "<IANA name, such as Asia/Colombo>", "note": string },
   "audit": { "confidenceModifier": number, "band": "HIGH" | "MODERATE" | "LOW", "summary": string, "flags": [string] },
   "promise": {
     "career": {
@@ -284,8 +291,13 @@ No em dashes. Use commas or parentheses. Plain, specific language. No
 cuspal sub lord, nakshatra) are correct and wanted.`;
 }
 
+/** The birth moment as the local wall clock at the birthplace, the form Lumin reads. */
+export function birthDatetime(input: BirthInput): string {
+  return `${input.birthDate}T${input.birthTime}:00`;
+}
+
 export function buildUserPrompt(input: BirthInput): string {
-  const birth_datetime = `${input.birthDate}T${input.birthTime}:00`;
+  const birth_datetime = birthDatetime(input);
   return `Client profile:
 - Name: ${input.name || "Anonymous"}
 - Birth date: ${input.birthDate}

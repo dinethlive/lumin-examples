@@ -95,15 +95,17 @@ The user gives their birth city as free text (for example "Colombo, Sri Lanka", 
 
 - latitude (decimal degrees, north positive)
 - longitude (decimal degrees, east positive)
-- utc_offset_minutes (the offset that was IN EFFECT AT THE BIRTH DATE; historical timezone matters: India was +05:30 from 1955, Sri Lanka has switched between +05:30, +06:30, and +06:00, many countries observe DST)
+- time_zone (the IANA time zone name of the birthplace, for example "Asia/Colombo", "Asia/Kolkata" or "America/New_York")
 
-Use the country in the input to disambiguate same-named cities. If the country is omitted, default to the largest match and note your assumption. If the city is unrecognizable, use 0/0/0 and explain in the note.
+Do not work out a UTC offset yourself. Lumin reads the offset in force at the birth date and time from the time zone, with daylight saving and past changes included. Sri Lanka alone has used +05:30, +06:30 and +06:00. A typed offset is often today's offset, and 30 minutes moves the Ascendant about 7 degrees.
+
+Use the country in the input to disambiguate same-named cities. If the country is omitted, default to the largest match and note your assumption. If the city is unrecognizable, use latitude 0, longitude 0 and time_zone "Etc/UTC", and explain in the note.
 
 These resolved values feed every Lumin tool call. Do not skip this step.
 
 # Step 1. Foundation: cast the chart (Phase 1)
 
-Call these Lumin MCP tools (pass birth_datetime, latitude, longitude, utc_offset_minutes, ayanamsa: "kp" to each):
+Call these Lumin MCP tools (pass birth_datetime, latitude, longitude, time_zone, ayanamsa: "kp" to each, and never utc_offset_minutes):
 
 1. **set_birth_profile**, validate inputs
 2. **get_full_chart**, ascendant, planets, dasha overview
@@ -226,7 +228,7 @@ Return STRICTLY this JSON shape. No prose, no markdown fences, no preamble.
   "resolved_location": {
     "latitude": <number>,
     "longitude": <number>,
-    "utc_offset_minutes": <integer>,
+    "time_zone": "<IANA name, such as Asia/Colombo>",
     "note": "<short note>"
   },
   "vitality_index": {
@@ -301,7 +303,7 @@ Return STRICTLY this JSON shape. No prose, no markdown fences, no preamble.
 - severity_score is consistent with risk_level band (low 0 to 29, moderate 30 to 54, elevated 55 to 74, high 75 to 100)
 - every peak_window date is YYYY-MM (no day, no time)
 - screening_calendar has 3 to 6 entries
-- utc_offset_minutes is an integer
+- time_zone is an IANA name, such as Asia/Colombo
 - every primary_indicator quotes a SPECIFIC observed placement, not a generic phrase
 - chart_confidence.band is one of high, moderate, low
 - organ_panel.regions has 5 to 6 entries, ordered highest score first
@@ -327,8 +329,13 @@ Return ONLY the JSON object. No backticks, no preamble, no commentary outside th
 Do not use em dashes in any string you produce. Use commas, colons, or sentence breaks instead.`;
 }
 
+/** The birth moment as the local wall clock at the birthplace, the form Lumin reads. */
+export function birthDatetime(input: BirthInput): string {
+  return `${input.birth_date}T${input.birth_time}:00`;
+}
+
 export function buildUserPrompt(input: BirthInput): string {
-  const birth_datetime = `${input.birth_date}T${input.birth_time}:00`;
+  const birth_datetime = birthDatetime(input);
   return `Subject profile:
 - Name: ${input.name || "Anonymous"}
 - Biological sex: ${input.biological_sex}
@@ -340,5 +347,5 @@ Birth datetime in ISO format (without timezone): "${birth_datetime}"
 ayanamsa: "kp"
 birth_time_known: ${input.birth_time_known}
 
-Resolve the birth city to coordinates and UTC offset (Step 0), then run the full 7-step constitutional health analysis. Output JSON only; no preamble, no fences. The 8 system_risks must appear in the exact order: cardiovascular, respiratory, digestive, nervous-mental, musculoskeletal, endocrine-metabolic, reproductive-urinary, immune-vitality.`;
+Resolve the birth city to coordinates and a time zone (Step 0), then run the full 7-step constitutional health analysis. Output JSON only; no preamble, no fences. The 8 system_risks must appear in the exact order: cardiovascular, respiratory, digestive, nervous-mental, musculoskeletal, endocrine-metabolic, reproductive-urinary, immune-vitality.`;
 }
