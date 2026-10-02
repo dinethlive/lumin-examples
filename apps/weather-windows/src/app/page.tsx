@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatUtcOffset } from "@lumin-examples/client/zone";
 import { Hero } from "@/components/Hero";
 import { PlaceForm } from "@/components/PlaceForm";
 import { SeasonBanner } from "@/components/SeasonBanner";
@@ -125,7 +126,8 @@ function ResolvedLocationCaption({ result }: { result: ForecastResponse }) {
   const { resolved_location: resolved, range } = result;
   const lat = formatCoord(resolved.latitude, "N", "S");
   const lng = formatCoord(resolved.longitude, "E", "W");
-  const offset = formatOffset(resolved.utc_offset_minutes);
+  const offset = formatUtcOffset(resolved.utc_offset_minutes);
+  const atEnd = resolved.utc_offset_minutes_at_end;
   return (
     <div className="fade-up mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
       <span className="font-medium tracking-[0.16em] uppercase text-primary">
@@ -133,13 +135,25 @@ function ResolvedLocationCaption({ result }: { result: ForecastResponse }) {
       </span>
       <span className="font-medium text-foreground">{resolved.label}</span>
       <span className="font-mono">
-        {lat}, {lng} · UTC{offset}
+        {lat}, {lng} · {resolved.time_zone}, UTC{offset}
+        {atEnd !== undefined && ` at the start, UTC${formatUtcOffset(atEnd)} at the end`}
       </span>
       <span className="text-muted-foreground/80">
         · {range.start} to {range.end}
       </span>
       {resolved.note && (
         <span className="text-muted-foreground/80">· {resolved.note}</span>
+      )}
+      {resolved.zone_mismatch && (
+        <p
+          role="note"
+          className="mt-2 w-full rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200"
+        >
+          {resolved.label} keeps {resolved.zone_mismatch.place_time_zone} time, UTC
+          {formatUtcOffset(resolved.zone_mismatch.place_offset_minutes)} at the start of the range.
+          This plan used {resolved.time_zone}, so its window times are on the wrong clock. Change the
+          time zone to {resolved.zone_mismatch.place_time_zone} and plan again.
+        </p>
       )}
     </div>
   );
@@ -244,13 +258,6 @@ function formatCoord(value: number, pos: string, neg: string): string {
   return `${Math.abs(value).toFixed(2)}°${dir}`;
 }
 
-function formatOffset(minutes: number): string {
-  const sign = minutes >= 0 ? "+" : "-";
-  const abs = Math.abs(minutes);
-  const hh = String(Math.floor(abs / 60)).padStart(2, "0");
-  const mm = String(abs % 60).padStart(2, "0");
-  return `${sign}${hh}:${mm}`;
-}
 
 function Footer() {
   return (

@@ -52,12 +52,37 @@ export type MonsoonOutlook = {
   summary: string;
 };
 
+/** The place as the model writes it, before the route adds the clock it used. */
+export type ModelLocation = {
+  latitude: number;
+  longitude: number;
+  /** The IANA zone the place is in, from the model's own knowledge. */
+  place_time_zone: string;
+  label: string;
+  note: string;
+};
+
 export type ResolvedLocation = {
   latitude: number;
   longitude: number;
+  /** The zone the planner used, from the form. */
+  time_zone: string;
+  /** Minutes east of UTC in time_zone at the range start. Every tool call used it. */
   utc_offset_minutes: number;
+  /** Set when clocks change inside the range: the offset at the range end. */
+  utc_offset_minutes_at_end?: number;
+  /**
+   * Set when the place's own zone runs a different offset at the range start.
+   * The window times are then on the wrong clock, so the page says so.
+   */
+  zone_mismatch?: { place_time_zone: string; place_offset_minutes: number };
   label: string;
   note: string;
+};
+
+/** The JSON the model writes, before the route sets the place's clock. */
+export type ForecastModelResponse = Omit<ForecastResponse, "resolved_location"> & {
+  resolved_location: ModelLocation;
 };
 
 export type ForecastResponse = {
@@ -75,4 +100,12 @@ export type ForecastInput = {
   location_name: string;
   start_date: string;
   end_date: string;
+  /** IANA time zone of the place, such as "Asia/Colombo". The route reads the offset from it. */
+  time_zone: string;
+};
+
+/** The input after the route read the offsets for the range from the time zone. */
+export type ResolvedForecastInput = ForecastInput & {
+  utc_offset_minutes: number;
+  utc_offset_minutes_at_end: number;
 };

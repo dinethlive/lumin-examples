@@ -5,9 +5,19 @@ import {
   parseJsonBlock,
   ensureShape,
   LuminClientError,
+  isKnownTimeZone,
+  offsetMinutesAt,
 } from "@lumin-examples/client";
 import { ALLOWED_TOOLS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
-import type { Channel, ForecastInput, ForecastResponse, WeatherWindow } from "@/lib/types";
+import type {
+  Channel,
+  ForecastModelResponse,
+  ForecastResponse,
+  ModelLocation,
+  ResolvedForecastInput,
+  ResolvedLocation,
+  WeatherWindow,
+} from "@/lib/types";
 
 export const runtime = "nodejs";
 /** The loading copy promises 40 to 90 seconds, so this has room above that. */
@@ -24,7 +34,7 @@ function badRequest(message: string) {
   return NextResponse.json({ error: message, failure: "bad_request" }, { status: 400 });
 }
 
-function validateInput(body: unknown): ForecastInput | string {
+function validateInput(body: unknown): ResolvedForecastInput | string {
   if (typeof body !== "object" || body === null) {
     return "Body must be a JSON object";
   }
@@ -50,11 +60,61 @@ function validateInput(body: unknown): ForecastInput | string {
   if (days > MAX_RANGE_DAYS) {
     return `Date range is too wide; keep it within ${MAX_RANGE_DAYS} days`;
   }
+  if (typeof b.time_zone !== "string" || !isKnownTimeZone(b.time_zone)) {
+    return 'time_zone is required, an IANA name such as "Asia/Colombo"';
+  }
+  // Every tool takes one offset, so it comes from the tz database for this
+  // zone at the range start, never from a guess. The end offset is kept so the
+  // page can say when clocks change inside the range.
+  const startOffset = offsetMinutesAt(b.time_zone, noonOf(b.start_date));
+  const endOffset = offsetMinutesAt(b.time_zone, noonOf(b.end_date));
+  if (startOffset === null || endOffset === null) {
+    return "the UTC offset for that range could not be read from time_zone";
+  }
   return {
     location_name: b.location_name.trim(),
     start_date: b.start_date,
     end_date: b.end_date,
+    time_zone: b.time_zone,
+    utc_offset_minutes: Math.round(startOffset),
+    utc_offset_minutes_at_end: Math.round(endOffset),
   };
+}
+
+/** Noon on the date. A daylight saving change happens in the small hours, so noon is clear of it. */
+function noonOf(date: string): string {
+  return `${date}T12:00:00`;
+}
+
+/**
+ * The place the page shows, on the clock the form chose. When the place's own
+ * zone runs a different offset at the range start, the window times are on the
+ * wrong clock, so the response says which zone to use. Offsets are compared,
+ * not names, so an alias such as Asia/Calcutta for Asia/Kolkata is no mismatch.
+ */
+function locationFor(model: ModelLocation, input: ResolvedForecastInput): ResolvedLocation {
+  const location: ResolvedLocation = {
+    latitude: model.latitude,
+    longitude: model.longitude,
+    time_zone: input.time_zone,
+    utc_offset_minutes: input.utc_offset_minutes,
+    label: model.label,
+    note: model.note,
+  };
+  if (input.utc_offset_minutes_at_end !== input.utc_offset_minutes) {
+    location.utc_offset_minutes_at_end = input.utc_offset_minutes_at_end;
+  }
+  const placeOffset =
+    typeof model.place_time_zone === "string"
+      ? offsetMinutesAt(model.place_time_zone, noonOf(input.start_date))
+      : null;
+  if (placeOffset !== null && Math.round(placeOffset) !== input.utc_offset_minutes) {
+    location.zone_mismatch = {
+      place_time_zone: model.place_time_zone,
+      place_offset_minutes: Math.round(placeOffset),
+    };
+  }
+  return location;
 }
 
 function isChannel(value: unknown): value is Channel {
@@ -70,13 +130,12 @@ function isChannel(value: unknown): value is Channel {
 }
 
 /** App-specific: the shape this app renders. Kept separate from the shared client. */
-function validateShape(data: ForecastResponse): string | null {
+function validateShape(data: ForecastModelResponse): string | null {
   const loc = data.resolved_location;
   if (
     !loc ||
     typeof loc.latitude !== "number" ||
-    typeof loc.longitude !== "number" ||
-    typeof loc.utc_offset_minutes !== "number"
+    typeof loc.longitude !== "number"
   ) {
     return "Response missing resolved_location";
   }
@@ -140,8 +199,12 @@ export async function POST(req: NextRequest) {
 
     logRun(ROUTE, result);
 
-    const data = ensureShape(parseJsonBlock<ForecastResponse>(result.text), validateShape);
-    return NextResponse.json(data);
+    const data = ensureShape(parseJsonBlock<ForecastModelResponse>(result.text), validateShape);
+    const response: ForecastResponse = {
+      ...data,
+      resolved_location: locationFor(data.resolved_location, input),
+    };
+    return NextResponse.json(response);
   } catch (err) {
     if (err instanceof LuminClientError) {
       console.error(

@@ -1,4 +1,4 @@
-import type { ForecastInput } from "./types";
+import type { ResolvedForecastInput } from "./types";
 
 /**
  * Deny-by-default allowlist. The model can call these Lumin tools and no
@@ -36,15 +36,17 @@ The user gives a place as free text (for example "Colombo, Sri Lanka", "Chennai"
 
 - latitude (decimal degrees, north positive)
 - longitude (decimal degrees, east positive)
-- utc_offset_minutes (the standard UTC offset in effect for that place during the requested date range; account for daylight saving where the place observes it)
+- place_time_zone (the IANA time zone the place is in, for example "Asia/Colombo" or "Europe/Lisbon")
 
-Use the country or region in the input to disambiguate same-named places (Colombo, Sri Lanka vs Colombo, Brazil). If the country is omitted, default to the largest match and note the assumption. If the place is unrecognizable, use 0/0/0 and explain in the note.
+Do not work out a UTC offset. The request gives you utc_offset_minutes, which the app read from the time zone the person chose, at the start of the range. Use it on every tool call, even when the place's zone looks different. The app checks it against place_time_zone.
+
+Use the country or region in the input to disambiguate same-named places (Colombo, Sri Lanka vs Colombo, Brazil). If the country is omitted, default to the largest match and note the assumption. If the place is unrecognizable, use latitude 0, longitude 0 and place_time_zone "Etc/UTC", and explain in the note.
 
 These resolved values feed every Lumin tool call. Do not skip this step. The astrometeorology tools are place-based: they take a location and a date, never birth data, so do NOT call set_birth_profile.
 
 # Step 1. Call the astrometeorology tools
 
-Pass to every call: latitude, longitude, utc_offset_minutes (from Step 0), ayanamsa: "kp", and location_label (the cleaned place name).
+Pass to every call: latitude, longitude, utc_offset_minutes (from the request), ayanamsa: "kp", and location_label (the cleaned place name).
 
 1. **get_seasonal_outlook**, with year set to the year of the range start. It returns four seasonal weather themes derived from the cardinal ingress charts (the Sun entering Aries, Cancer, Libra, Capricorn). Pick the season that contains the requested range and use it for the season banner.
 2. **get_weather_windows**, with start_date and end_date set to the requested range. It returns a windows array, each window cast from a lunation chart (the new moon or full moon that opens it). Each window carries three weather channels (temperature, precipitation, wind or storm) with a signal, a 0-100 score, and a descriptive band, plus the 4th-cusp CSL verdict and a Sapta Nadi Chakra block.
@@ -92,9 +94,9 @@ Return STRICTLY this JSON shape. No prose, no markdown fences, no preamble.
   "resolved_location": {
     "latitude": <number>,
     "longitude": <number>,
-    "utc_offset_minutes": <integer>,
+    "place_time_zone": "<IANA name, such as Asia/Colombo>",
     "label": "<cleaned place name, e.g. 'Colombo, Sri Lanka'>",
-    "note": "<short note on how you resolved the place and offset>"
+    "note": "<short note on how you resolved the place>"
   },
   "range": { "start": "<YYYY-MM-DD>", "end": "<YYYY-MM-DD>" },
   "season": {
@@ -147,7 +149,7 @@ Always include this exact disclaimer:
 - best_window matches one of the window labels exactly
 - current is present with all three channels filled (it is always read from get_astro_weather)
 - monsoon is either a full object (monsoon-region place) or null (everywhere else), never half-filled
-- utc_offset_minutes is an integer
+- place_time_zone is an IANA name, such as Asia/Colombo
 
 # Final reminder
 
@@ -158,10 +160,12 @@ Return ONLY the JSON object. No backticks, no preamble, no commentary outside th
 Do not use em dashes in any string you produce. Use commas, colons, or sentence breaks instead.`;
 }
 
-export function buildUserPrompt(input: ForecastInput): string {
+export function buildUserPrompt(input: ResolvedForecastInput): string {
   return `Forecast request:
 - Place (free text): ${input.location_name}
 - Date range: ${input.start_date} to ${input.end_date}
+- Time zone the person chose: ${input.time_zone}
+- utc_offset_minutes at the range start, for every tool call: ${input.utc_offset_minutes}
 
-Resolve the place to coordinates and a UTC offset (Step 0), then call get_seasonal_outlook for the season context, get_weather_windows across the requested range, and get_astro_weather for the present-moment snapshot. Add get_monsoon_forecast only if this is a monsoon-influenced place. Return the structured outdoor-window planner. Output JSON only: no preamble, no fences.`;
+Resolve the place to coordinates and its time zone (Step 0), then call get_seasonal_outlook for the season context, get_weather_windows across the requested range, and get_astro_weather for the present-moment snapshot. Add get_monsoon_forecast only if this is a monsoon-influenced place. Return the structured outdoor-window planner. Output JSON only: no preamble, no fences.`;
 }

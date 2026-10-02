@@ -70,10 +70,19 @@ bothered to read".
 ## City and place resolution
 
 The form asks for the place as free text, such as "Colombo, Sri Lanka", "Chennai" or "Lisbon,
-Portugal". The model resolves the place to coordinates, and to the UTC offset in effect during the
-range, from its own geographic knowledge. So the demo needs no separate geocoding API. The response
-includes the resolved values, so a visitor can check that the app used the right place. For
-production traffic, use a real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
+Portugal". The model resolves the place to coordinates from its own geographic knowledge. So the
+demo needs no separate geocoding API. The response includes the resolved values, so a visitor can
+check that the app used the right place. For production traffic, use a real geocoding API
+(OpenCage, Google, Nominatim) before the Lumin call.
+
+The form also asks for the place's IANA time zone. It takes the zone from the typed place when a
+zone has that name (Lisbon becomes Europe/Lisbon), and from the browser otherwise. Every tool takes
+one offset, so the route reads the offset at the range start from the tz database, with
+`offsetMinutesAt`. When clocks change inside the range, the page shows the offset at both ends.
+
+The model also names the zone that the place is in. That zone can run a different offset at the
+range start. Then the page says that the window times are on the wrong clock, and it names the zone
+to use.
 
 ## Run it
 

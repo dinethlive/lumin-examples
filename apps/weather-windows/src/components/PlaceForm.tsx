@@ -1,7 +1,33 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { formatUtcOffset, isKnownTimeZone, offsetMinutesAt } from "@lumin-examples/client/zone";
 import type { ForecastInput, ForecastResponse } from "@/lib/types";
+
+/**
+ * The zone whose name ends in the typed place, such as "Europe/Lisbon" for
+ * "Lisbon, Portugal". Many places have no zone of their own (Chennai is
+ * Asia/Kolkata), so a miss keeps the current zone, and the route checks it.
+ */
+function zoneForPlace(place: string, zones: string[]): string | null {
+  const name = place.split(",")[0].trim().toLowerCase().replace(/\s+/g, "_");
+  if (!name) return null;
+  return zones.find((zone) => zone.toLowerCase().split("/").pop() === name) ?? null;
+}
+
+/** What clocks read in the zone across the range, so a wrong zone shows itself. */
+function zoneHint(timeZone: string, startDate: string, endDate: string): string {
+  if (!isKnownTimeZone(timeZone)) {
+    return "Use an IANA name, such as Asia/Colombo, Europe/Lisbon or America/Denver.";
+  }
+  const start = offsetMinutesAt(timeZone, `${startDate}T12:00:00`);
+  const end = offsetMinutesAt(timeZone, `${endDate}T12:00:00`);
+  if (start === null) return "Enter the range to see the offset.";
+  if (end !== null && Math.round(end) !== Math.round(start)) {
+    return `Clocks there read UTC${formatUtcOffset(start)} at the start and UTC${formatUtcOffset(end)} at the end. The tools use the start offset.`;
+  }
+  return `Clocks there read UTC${formatUtcOffset(start)} across the range.`;
+}
 
 type Props = {
   onResult: (result: ForecastResponse) => void;
@@ -14,6 +40,25 @@ export function PlaceForm({ onResult, onLoadingChange, onError, loading }: Props
   const [location, setLocation] = useState("Colombo, Sri Lanka");
   const [startDate, setStartDate] = useState("2026-06-01");
   const [endDate, setEndDate] = useState("2026-08-15");
+  const [timeZone, setTimeZone] = useState("");
+  const [zoneEdited, setZoneEdited] = useState(false);
+  const [zones, setZones] = useState<string[]>([]);
+
+  // Filled after mount, because the server and the browser can carry different
+  // zone lists. The default is the typed place's zone, else the visitor's own.
+  useEffect(() => {
+    const list = Intl.supportedValuesOf("timeZone");
+    setZones(list);
+    setTimeZone((current) => current || zoneForPlace(location, list) || Intl.DateTimeFormat().resolvedOptions().timeZone);
+    // Runs once, with the first place. Later place edits go through changeLocation.
+  }, []);
+
+  function changeLocation(next: string) {
+    setLocation(next);
+    if (zoneEdited) return;
+    const match = zoneForPlace(next, zones);
+    if (match) setTimeZone(match);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -33,6 +78,7 @@ export function PlaceForm({ onResult, onLoadingChange, onError, loading }: Props
       location_name: trimmedLocation,
       start_date: startDate,
       end_date: endDate,
+      time_zone: timeZone,
     };
 
     onError(null);
@@ -91,7 +137,7 @@ export function PlaceForm({ onResult, onLoadingChange, onError, loading }: Props
             <input
               type="text"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e) => changeLocation(e.target.value)}
               placeholder="e.g. Colombo, Sri Lanka"
               className="input"
               autoComplete="off"
@@ -100,7 +146,33 @@ export function PlaceForm({ onResult, onLoadingChange, onError, loading }: Props
             />
             <span className="mt-1.5 text-xs text-muted-foreground">
               Include the country or region if possible. We&rsquo;ll resolve the
-              coordinates and timezone for you.
+              coordinates for you.
+            </span>
+          </Field>
+
+          <Field label="Time zone">
+            <input
+              type="text"
+              value={timeZone}
+              onChange={(e) => {
+                setZoneEdited(true);
+                setTimeZone(e.target.value.trim());
+              }}
+              list="time-zones"
+              placeholder="e.g. Asia/Colombo"
+              className="input"
+              autoComplete="off"
+              spellCheck={false}
+              required
+              disabled={loading}
+            />
+            <datalist id="time-zones">
+              {zones.map((zone) => (
+                <option key={zone} value={zone} />
+              ))}
+            </datalist>
+            <span className="mt-1.5 text-xs text-muted-foreground">
+              {zoneHint(timeZone, startDate, endDate)}
             </span>
           </Field>
 
