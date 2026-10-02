@@ -13,10 +13,10 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.122.0"
+    "@anthropic-ai/sdk": "^0.131.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "@types/node": "^22.15.3"
+    "typescript": "^7.0.2",
+    "@types/node": "^24.19.1"
   }
 }

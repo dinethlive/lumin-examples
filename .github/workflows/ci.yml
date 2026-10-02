@@ -10,10 +10,10 @@ jobs:
     name: Tool names exist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.10"
+          bun-version: "1.4.2"
       - run: bun scripts/check-tool-names.mjs
 
   typecheck:
@@ -33,14 +33,18 @@ jobs:
           - health-risk-analyzer
           - weather-windows
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.10"
+          bun-version: "1.4.2"
       - run: bun install --frozen-lockfile
       - run: bun run --filter ${{ matrix.app }} typecheck
       # Next builds on Node. Bun is the package manager and task runner here,
       # because Next 16 with Turbopack does not run under the Bun runtime.
+      # Pin the LTS line so the build does not follow the runner image.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
       - run: bun run --filter ${{ matrix.app }} build
         env:
           ANTHROPIC_API_KEY: build-placeholder

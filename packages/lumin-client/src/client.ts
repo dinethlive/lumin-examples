@@ -1,18 +1,28 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { LuminClientError } from "./errors";
 
-/** The public Lumin MCP endpoint. API keys go here. */
+/**
+ * The public Lumin MCP endpoint. API keys go here. `/mcp/auth` is the
+ * OAuth-only endpoint for interactive clients. An API key sent there is
+ * rejected, which is worth stating because the first generation of these
+ * examples told developers to do exactly that.
+ */
 export const DEFAULT_MCP_URL = "https://mcp.lumin.guru/mcp";
 
 /**
- * `/mcp/auth` is the OAuth-only endpoint for interactive clients. An API key
- * sent there is rejected, which is worth stating because the first generation
- * of these examples told developers to do exactly that.
+ * Thinking cannot be switched off on this model, and its default effort is
+ * medium, so every run sets effort itself.
  */
-export const DEFAULT_MODEL = "claude-opus-5";
+export const DEFAULT_MODEL = "claude-opus-5-5";
 
 /** The MCP connector is still behind a beta flag. Both halves are required. */
 const MCP_BETA = "mcp-client-2025-11-20";
+
+/**
+ * With `fallbacks: "default"`, a request the model declines is re-run on a
+ * fallback model inside the same call, routed by the refusal category.
+ */
+const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
 /** The server name the model sees. Referenced by the toolset, so keep them equal. */
 const SERVER_NAME = "lumin";
@@ -189,7 +199,8 @@ export async function runLumin(opts: LuminRunOptions): Promise<LuminRunResult> {
               configs,
             },
           ],
-          betas: [MCP_BETA],
+          fallbacks: "default",
+          betas: [MCP_BETA, FALLBACK_BETA],
         },
         opts.signal ? { signal: opts.signal } : undefined,
       );

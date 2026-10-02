@@ -24,7 +24,7 @@ Every app reads the same variables from its own `.env.local`.
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | Yes | The model key. The model bill belongs to whoever runs the app |
 | `LUMIN_API_KEY` | Yes | A key from [developer.lumin.guru](https://developer.lumin.guru), prefix `mcp_`. Every Lumin endpoint needs credentials |
-| `ANTHROPIC_MODEL` | No | Defaults to `claude-opus-5`. `claude-sonnet-5` is fine for a lookup-sized app |
+| `ANTHROPIC_MODEL` | No | Defaults to `claude-opus-5-5`. `claude-sonnet-5-5` is fine for a lookup-sized app |
 | `LUMIN_MCP_URL` | No | Defaults to `https://mcp.lumin.guru/mcp` |
 
 | App | Port | Birth data |
