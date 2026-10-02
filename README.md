@@ -14,7 +14,7 @@
 | App | What it does | Birth data |
 |---|---|---|
 | [`today-panel`](./apps/today-panel) | Panchang, choghadiya and hora for any city | No |
-| [`horary-desk`](./apps/horary-desk) | Ask a question, pick a number 1 to 249, get a verdict | No |
+| [`horary-desk`](./apps/horary-desk) | A verdict on a question, from a number the asker picks (1 to 249) | No |
 | [`weather-windows`](./apps/weather-windows) | Outdoor windows for a place and date range | No |
 | [`muhurta-scheduler`](./apps/muhurta-scheduler) | A date picker that knows what the date is for | Yes |
 | [`kundli-match`](./apps/kundli-match) | Three compatibility systems, side by side | Two charts |
@@ -23,25 +23,30 @@
 | [`products-matcher`](./apps/products-matcher) | Consumer personality, then products across categories | Yes |
 | [`health-risk-analyzer`](./apps/health-risk-analyzer) | Constitutional risk across body systems | Yes |
 
-Three need no personal data at all. 21 of the server's tools take only a place and a date, or
-only a number and a moment, so you can ship a real feature with no consent flow.
+Three apps need no birth data. Several of the server's tools take only a place and a date, or only
+a number and a moment. With those tools, you can ship a real feature with no consent flow.
 
-**[USE-CASES.md](./USE-CASES.md)** lists 98 more, with the tool chain for each.
+**[USE-CASES.md](./USE-CASES.md)** lists 98 more use cases, with the tool chain for each.
 
 ## Run one
 
-Needs [Bun](https://bun.sh) 1.2 or newer.
+You need [Bun](https://bun.sh) 1.2 or newer.
 
 ```bash
+git clone https://github.com/dinethlive/lumin-examples
+cd lumin-examples
 bun install
-cp apps/today-panel/.env.example apps/today-panel/.env.local
+cp apps/today-panel/.env.example apps/today-panel/.env.local   # then add your keys to it
 bun run --filter today-panel dev     # http://localhost:3110
 ```
 
-Two keys. `ANTHROPIC_API_KEY` is yours, the model bill is yours.
-`LUMIN_API_KEY` comes from [app.lumin.guru/developer](https://app.lumin.guru/developer).
+You need two keys:
 
-Top up any amount from $1 for 400 calls. A lookup is a few calls, a full reading is 25 to 40.
+- `ANTHROPIC_API_KEY`, your model key. You pay the model bill.
+- `LUMIN_API_KEY`, from [app.lumin.guru/api-keys](https://app.lumin.guru/api-keys).
+
+Every Lumin account gets 300 free tool calls each month. After that, you can top up any amount, from
+$1 for 400 calls. A lookup uses a few calls. A full reading uses 25 to 40.
 
 Bun is the package manager and task runner. Next itself still builds on Node, because Next 16
 with Turbopack does not run under the Bun runtime yet.
@@ -62,15 +67,20 @@ const result = await runLumin({
 const parsed = ensureShape(parseJsonBlock<MatchResponse>(result.text), validate);
 ```
 
-It handles what a bare `messages.create` does not: `pause_turn` resumption, refusals and
-truncation mapped to real statuses, a check that some Lumin tool actually ran, and the rate
-limit that arrives as tool-result text rather than an HTTP status.
+The client handles five things that a bare `messages.create` does not:
+
+- It resumes a turn that stops with `pause_turn`.
+- It maps refusals and truncation to real statuses.
+- It checks that some Lumin tool actually ran.
+- It detects Lumin's rate limit, which arrives as tool-result text, not as an HTTP status.
+- It turns on the server-side refusal fallback. A declined request runs again on a fallback model
+  inside the same call.
 
 ## Building with an agent
 
-`AGENTS.md` (imported by `CLAUDE.md`) carries what an agent needs to run, verify and extend the
-repo. `.mcp.json` connects Claude Code to the hosted server, and the Lumin plugin adds `kp-build`,
-the skill for this kind of work.
+`CLAUDE.md` imports `AGENTS.md`, which holds what an agent needs to run, check and extend the repo.
+`.mcp.json` connects Claude Code to the hosted server. The Lumin plugin adds `kp-build`, the skill
+for this kind of work.
 
 ```
 /plugin marketplace add https://www.lumin.guru/plugin/marketplace.json
@@ -79,8 +89,9 @@ the skill for this kind of work.
 
 ## Contributing
 
-[CONTRIBUTING.md](./CONTRIBUTING.md). Two rules matter most. Verify every tool name, because
-`bun run check:tools` fails CI on one that does not exist. Label every non-KP tool, because a
-third of the surface is Parashari, Jaimini or Tajik.
+Read [CONTRIBUTING.md](./CONTRIBUTING.md). Two rules matter most:
 
-MIT. See [LICENSE](./LICENSE).
+- Check every tool name. `bun run check:tools` fails CI on a name that does not exist.
+- Label every non-KP tool. Roughly a third of the tools are Parashari, Jaimini or Tajik.
+
+The license is MIT. See [LICENSE](./LICENSE).

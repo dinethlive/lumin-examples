@@ -1,76 +1,81 @@
 # Health Risk Analyzer
 
-A Lumin example: a single-page widget that reads a person's KP/Vedic chart and returns a
-**constitutional health risk profile** across eight body systems, with a vitality index, peak
-vulnerability windows, surgery and recovery timing, and a screening calendar.
+This Lumin example is a single-page widget. It reads a person's KP/Vedic chart and returns a
+**constitutional health risk profile** across eight body systems. The profile includes a vitality
+index, peak vulnerability windows, surgery and recovery timing, and a screening calendar.
 
 **Vertical:** integrative medicine clinics, telehealth apps, corporate wellness platforms, insurance
-underwriters, and Ayurvedic chains, where a structured, prevention-oriented risk read complements
-actual screening. The 8-system mapping runs on KP karaka logic. Fork it and extend the systems or
-re-skin for your brand.
+underwriters, and Ayurvedic chains. In these places, a structured, prevention-oriented risk read
+complements actual screening. The 8-system mapping runs on KP karaka logic. Fork it. Then extend
+the systems, or re-skin it for your brand.
 
 <!-- screenshot: docs/health-risk-analyzer.png -->
 
 ## What it wires
 
-31 tool calls across a 7-step protocol.
+The protocol has 7 steps and makes up to 31 tool calls.
 
 | Tool | What it contributes | System |
 |---|---|---|
-| `set_birth_profile` | Validates inputs, returns the reading plan | KP |
+| `set_birth_profile` | Checks the inputs, returns the reading plan | KP |
 | `get_full_chart` | Ascendant, planets, dasha overview | KP |
 | `get_planets` | Exact positions, retrograde, combustion, dignities | KP |
-| `get_house_cusps` | All 12 cusps; 1st, 6th, 8th, 11th, 12th sub lords are the health-critical set | KP |
+| `get_house_cusps` | All 12 cusps. The sub lords of the 1st, 6th, 8th, 11th and 12th are the health-critical set | KP |
 | `get_nakshatra_details` | Moon nakshatra and pada | KP |
 | `get_aspects_and_strength` | House strength scores | Vedic Parashari, cross-system reference |
-| `run_pre_verdict_audit` | Chart-integrity gate: boundary, combustion, planetary war, vargottama in one pass, feeds `chart_confidence` | KP |
-| `analyze_natal_promise` | Verdict for health, longevity, chronic-disease life events. **Paged.** | KP |
+| `run_pre_verdict_audit` | Chart-integrity gate. Checks boundary, combustion, planetary war and vargottama in one pass. Feeds `chart_confidence` | KP |
+| `analyze_natal_promise` | Verdict for health, longevity and chronic-disease life events. **Paged.** | KP |
 | `get_significators` | The 4-level house-signification matrix behind every "signifies 6/8/12" claim | KP |
 | `get_multi_system_verdict` | 4-school consensus (KP CSL, KCIL, 4-Step, Bosmia) for Chronic Illness and Surgery | KP-extended |
-| `get_bhadhakasthana` | The lagna-mobility-driven blockage house | KP |
+| `get_bhadhakasthana` | The blockage house, driven by the mobility of the lagna | KP |
 | `get_csl_advanced` | Deep CSL chain for cusps 1, 6, 8, 12 | KP |
 | `get_smart_current_dasha` | Current Mahadasha, Antardasha, Pratyantardasha | KP |
 | `get_dasha_periods` | Full Vimshottari for the next 25 years | KP |
 | `get_ruling_planets` | The KP timing-verification set (ascendant and Moon sign/star/sub lord, day lord) | KP |
-| `get_fruitful_significators` | Significator matrix intersected with ruling planets, per event, meaning only these can deliver it | KP |
-| `get_transit_timing_hierarchy` | Saturn-to-Moon transit cascade, opens a window only where a fruitful significator's star and sub lord align | KP |
-| `get_medical_timing` | Surgery windows, recovery-versus-chronic differentiation | KP |
+| `get_fruitful_significators` | Significator matrix intersected with ruling planets, per event. Only these significators can deliver the event | KP |
+| `get_transit_timing_hierarchy` | Saturn-to-Moon transit cascade. Opens a window only where the star and sub lord of a fruitful significator align | KP |
+| `get_medical_timing` | Surgery windows, recovery versus chronic differentiation | KP |
 | `get_ashtakavarga` | Bindus on houses 1, 6, 8 for longevity strength | Vedic Parashari, cross-system reference |
 | `get_chronic_disease_panel` | 8-condition watch-decade panel. **Paged.** | KP |
 | `get_health_organ_panel` | Sign-to-body-region affliction map, the engine-backed Kaalpurusha panel | Vedic Parashari, cross-system reference |
 | `get_accident_window` | Risk windows by class (vehicular, workplace, surgical, assault, generic) | KP |
 | `get_longevity_balarishta` | Qualitative lifespan band, never a date or a number of years | KP |
 | `get_sade_sati_phases` | Saturn's 7.5-year transit cycle. **Paged.** | KP |
-| `get_sade_sati_intensity` | Sub-lord-resolved intensity peaks within the Sade Sati phase | KP |
-| `get_ayurvedic_constitution` | Vata/Pitta/Kapha triple, feeds a one-line prakriti note | Vedic Parashari, cross-system reference |
-| `get_oncology_timing` | Conditional: body-part risk and recurrence-versus-cure, only when the intake or chart points there | KP |
+| `get_sade_sati_intensity` | Intensity peaks within the Sade Sati phase, resolved by sub lord | KP |
+| `get_ayurvedic_constitution` | Vata/Pitta/Kapha triple. Feeds a one-line prakriti note | Vedic Parashari, cross-system reference |
+| `get_oncology_timing` | Conditional. Body-part risk and recurrence versus cure, called only when the intake or chart points there | KP |
 | `get_d6_chart` | Shashtamsa, the classical companion to the chronic-disease panel | Vedic Parashari, cross-system reference |
 | `get_d8_chart` | Ashtamsa, the companion to the lifespan band | Vedic Parashari, cross-system reference |
-| `get_d30_chart` | Trimsamsa, corroborates the nervous-mental score | Vedic Parashari, cross-system reference |
+| `get_d30_chart` | Trimsamsa. Corroborates the nervous-mental score | Vedic Parashari, cross-system reference |
 
-Nine of the 31 tools are not orthodox KP: eight Vedic Parashari, one KP-extended. The system prompt
-tags every one of them inline and instructs the model to attribute any finding drawn from them
-accordingly, never as a KP verdict. Health astrology draws heavily on Parashari technique in the
-classical texts, so this is close to a third of the app's own tool set, not an edge case.
+Nine of the 31 tools are not orthodox KP. Eight are Vedic Parashari, and one is KP-extended. The
+system prompt tags each of them inline. It tells the model to attribute any finding from them to
+its own system, never as a KP verdict. In the classical texts, health astrology draws heavily on
+Parashari technique. So these tools are close to a third of the app's own tool set, not an edge
+case.
 
-## `get_vedha_transit` was removed, and replaced with the orthodox KP chain
+## The orthodox KP chain replaced `get_vedha_transit`
 
-The earlier build used `get_vedha_transit` as its mandatory timing trigger and described it as a KP
-transit rule. That framing did not survive a check against the tool taxonomy:
+The earlier build used `get_vedha_transit` as its mandatory timing trigger. It described the tool
+as a KP transit rule. A check against the tool taxonomy disproved that framing.
 `get_vedha_transit` reads the traditional Gochara transit-obstruction rule, and the taxonomy tags it
-Vedic Parashari rather than KP. KP does not accept that rule as a transit trigger.
+Vedic Parashari, not KP. KP does not accept that rule as a transit trigger.
 
-Using it as the gating trigger for a health app's `peak_window` claims was a correctness problem
-rather than a labelling nit, so it was replaced rather than relabelled. The
-timing trigger is now the orthodox KP transit chain: `get_ruling_planets` (the timing-verification
-set) feeds `get_fruitful_significators` (the significator matrix intersected with ruling planets,
-per event), which feeds `get_transit_timing_hierarchy` (the Saturn-to-Moon cascade, which only opens
-a window where a fruitful significator's star and sub lord line up). That is three tool calls in
-place of one, which is why the
-tool count moved from 29 to 31. Relabeling `get_vedha_transit` as a cross-system reference and
-keeping it as a secondary signal was the other option on the table; it was set aside because the
-app calls it the *mandatory* trigger, and a discredited rule should not gate a claim regardless of
-how clearly it is labeled.
+The tool gated the `peak_window` claims of a health app. That made it a correctness problem, not a
+labelling nit. So the build replaced the tool instead of relabelling it. The timing trigger is now
+the orthodox KP transit chain, where each step feeds the next:
+
+1. `get_ruling_planets` returns the timing-verification set.
+2. `get_fruitful_significators` intersects the significator matrix with the ruling planets, per
+   event.
+3. `get_transit_timing_hierarchy` runs the Saturn-to-Moon cascade. It opens a window only where the
+   star and sub lord of a fruitful significator line up.
+
+The chain makes three tool calls in place of one, so the app's tool count moved from 29 to 31.
+
+The other option was to relabel `get_vedha_transit` as a cross-system reference and keep it as a
+secondary signal. The build set that option aside. The app called the tool its *mandatory* trigger,
+and a discredited rule should not gate a claim, however clearly someone labels it.
 
 ## What it costs
 
@@ -80,19 +85,24 @@ how clearly it is labeled.
 | As shipped, oncology branch triggered | **31** |
 | Minimum useful profile (`get_full_chart`, `analyze_natal_promise`, `get_chronic_disease_panel`) | 3, plus 1 per extra page |
 
-The free plan is 300 tool calls per month per credential, so the shipped path runs about 9 to 10
-analyses a month on the free tier before the pack balance is drawn. This is the heaviest app in the
-set by design: a clinical-adjacent read earns the depth a 20-plus call floor buys.
+The free plan is 300 tool calls a month per account. All keys on an account share it. So the
+shipped path runs about 9 to 10 analyses a month on the free plan. After that, calls draw on the
+pack balance. This app is the heaviest in the set by design. A clinical-adjacent read earns the
+depth that a floor of 20 or more calls buys.
 
 ## Paging is a correctness requirement here, not an optimization
 
-`analyze_natal_promise`, `get_chronic_disease_panel`, and `get_sade_sati_phases` are all paged. The
-rows this protocol asks about by name, chronic illness, mental health, accident, and hospitalization,
-can sit on page 2, 3, or 4. The prompt instructs the model to read `pagination.totalItems` and
-`pageNote` after every call to these three tools and to keep paging until the row it needs is found
-or the pages run out, and it forbids writing "not exposed in the matrix" from a single page. In most
-apps a page you skip is a payload you saved. Here it is a promise the reading never checked, which
-in a health context reads as false reassurance rather than a shorter answer.
+`analyze_natal_promise`, `get_chronic_disease_panel` and `get_sade_sati_phases` all return paged
+results. The protocol asks about some rows by name: chronic illness, mental health, accident and
+hospitalization. These rows can sit on page 2, 3 or 4. After every call to these three tools, the
+prompt tells the model to:
+
+- read `pagination.totalItems` and `pageNote`.
+- request the next page until it finds the row it needs, or until no pages remain.
+- never write "not exposed in the matrix" from a single page.
+
+In most apps, a page you skip is a payload you save. Here it is a promise that the reading never
+checked. In a health context, that reads as false reassurance, not as a shorter answer.
 
 ## The 8 body systems
 
@@ -107,18 +117,22 @@ in a health context reads as false reassurance rather than a shorter answer.
 | Reproductive & Urinary | Venus, Mars | 7, 8 |
 | Immune & Vitality | Sun, Jupiter | 1, 8 |
 
-Each system carries a list of aggravating chart factors the prompt looks for. Severity is banded:
-0 to 29 low, 30 to 54 moderate, 55 to 74 elevated, 75 to 100 high.
+Each system carries a list of aggravating chart factors that the prompt checks. Severity has four
+bands: 0 to 29 is low, 30 to 54 is moderate, 55 to 74 is elevated, and 75 to 100 is high.
 
 ## Birth-time fallback
 
 Most people do not know their exact birth time. The form lets them tick "I don't know my birth
-time": the app defaults to 12:00 noon and the prompt skips ascendant-derived analysis (1st cusp CSL,
-Lagna-lord vitality), leaning on planetary placements, nakshatra, and dasha (Moon-driven, so it
-works without an exact time). `get_significators`, `get_multi_system_verdict`,
-`get_fruitful_significators`, and `get_transit_timing_hierarchy` all lean on the cusps, so they
-become approximate; `get_sade_sati_intensity` is computed from the natal Moon and stays reliable.
-The vitality index loses about 15 points of confidence and the constitutional notes say so.
+time". When they do:
+
+- the app uses 12:00 noon as the birth time.
+- the prompt skips ascendant-derived analysis (1st cusp CSL, Lagna-lord vitality).
+- the prompt relies on planetary placements, nakshatra and dasha. The dasha is Moon-driven, so it
+  works without an exact time.
+- `get_significators`, `get_multi_system_verdict`, `get_fruitful_significators` and
+  `get_transit_timing_hierarchy` become approximate, because they depend on the cusps.
+- `get_sade_sati_intensity` stays reliable, because Lumin computes it from the natal Moon.
+- the vitality index loses about 15 points of confidence, and the constitutional notes say so.
 
 ## Run it
 
@@ -127,21 +141,21 @@ The vitality index loses about 15 points of confidence and the constitutional no
 bun install
 cp apps/health-risk-analyzer/.env.example apps/health-risk-analyzer/.env.local
 # ANTHROPIC_API_KEY  your model key
-# LUMIN_API_KEY      from https://app.lumin.guru/developer
+# LUMIN_API_KEY      from https://app.lumin.guru/api-keys
 
 bun run --filter health-risk-analyzer dev   # http://localhost:3102
 ```
 
 ## Make it yours
 
-1. Adjust `src/data/body-systems.json`. Add a system, change the karaka weighting, swap the hue per
-   brand. Keep the schema (`primary_planets`, `primary_signs`, `primary_houses`,
+1. Edit `src/data/body-systems.json`. You can add a system, change the karaka weighting, or change
+   the hue for your brand. Keep the schema (`primary_planets`, `primary_signs`, `primary_houses`,
    `aggravating_factors`).
-2. Edit `src/lib/prompt.ts`. Tighten the severity banding, add more screening tests, adjust the
-   disclaimer to match your jurisdiction's clinical disclosure rules.
+2. Edit `src/lib/prompt.ts`. You can tighten the severity bands or add more screening tests. Make
+   the disclaimer match the clinical disclosure rules of your jurisdiction.
 3. Restyle `src/app/globals.css` and `src/components/*` with your colors and typography.
-4. For clinical deployments, replace the front-end intake with your existing EHR or patient form,
-   and post the JSON output into your physician dashboard.
+4. For a clinical deployment, replace the front-end intake with your existing EHR or patient form.
+   Send the JSON output to your physician dashboard.
 
 ## The disclaimer it ships
 
@@ -151,11 +165,15 @@ bun run --filter health-risk-analyzer dev   # http://localhost:3102
 > qualitative band only and never a death-date prediction. Oncology, chronic-disease, accident, and
 > Ayurvedic outputs are all supplementary lenses, not clinical findings.
 
-It is mandated in the system prompt, validated as a required field when the response arrives, and
-rendered by `DisclaimerBanner` on every result. The longevity band is enforced as qualitative only
-at three layers: the prompt says never a date or a number of years, the system prompt names the
-exact valid bands, and the disclaimer repeats the constraint so it survives even if a field is
-misread downstream.
+The system prompt requires this disclaimer. The route checks it as a required field when the
+response arrives. `DisclaimerBanner` shows it on every result.
+
+Three layers keep the longevity band qualitative:
+
+1. The prompt says never a date or a number of years.
+2. The system prompt names the exact valid bands.
+3. The disclaimer repeats the constraint. So the constraint survives even if something downstream
+   misreads a field.
 
 ## License
 

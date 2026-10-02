@@ -1,13 +1,13 @@
 # Products Matcher
 
-A Lumin example: a single-page widget that reads a visitor's KP/Vedic chart and returns a
-**consumer personality** read plus 5 product recommendations from a generalist e-commerce
-catalog, with reasoning grounded in the chart rather than a generic quiz.
+This Lumin example is a single-page widget. It reads a visitor's KP/Vedic chart. It returns two
+things: a **consumer personality** read and 5 product recommendations from a general e-commerce
+catalog. The reasons come from the chart, not from a generic quiz.
 
-**Vertical:** generalist e-commerce sites with broad catalogs (Kapruka, Daraz, FernsNPetals,
-Amazon-style marketplaces). The catalog ships with 30 sample products across 10 categories
-(flowers, cakes, chocolates, jewelry, electronics, hampers, home, fashion, toys, food). Fork it and
-swap your own SKUs.
+**Vertical:** general e-commerce sites with broad catalogs (Kapruka, Daraz, FernsNPetals,
+Amazon-style marketplaces). The catalog ships with 30 sample products in 10 categories: flowers,
+cakes, chocolates, jewelry, electronics, hampers, home, fashion, toys and food. Fork the app and
+replace the samples with your own SKUs.
 
 <!-- screenshot: docs/products-matcher.png -->
 
@@ -15,23 +15,25 @@ swap your own SKUs.
 
 | Tool | What it contributes | System |
 |---|---|---|
-| `set_birth_profile` | Validates the birth inputs and returns the reading plan | KP |
+| `set_birth_profile` | Checks the birth inputs and returns the reading plan | KP |
 | `get_full_chart` | Ascendant, planets, dasha overview | KP |
 | `get_planets` | Detailed positions, dignities, retrograde flags | KP |
 | `get_house_cusps` | All 12 cusps with sign lord, star lord, sub lord | KP |
 | `get_nakshatra_details` | Moon nakshatra and pada | KP |
 | `get_aspects_and_strength` | Whole-sign aspect geometry and a 0-100 house strength score | Vedic Parashari, cross-system reference |
-| `get_boundary_warnings` | Sub-lord credibility check; a CRITICAL lagna flag downweights ascendant-driven traits | KP |
-| `get_shadbala` | Six-fold planetary strength, tests whether a "strong planet" trait claim is backed by strength or just placement | Vedic Parashari, cross-system reference |
-| `get_arudha_lagna` | The Arudha Lagna, the projected public image; drives the **Public image** chart signal | Jaimini, cross-system reference |
-| `get_chara_karakas` | The Atmakaraka, the soul's deepest craving; drives the **Core drive** signal | Jaimini, cross-system reference |
-| `get_d2_chart` | The D2 (Hora) divisional chart, wealth-acquisition capacity; drives the **Spending capacity** signal | Vedic Parashari, cross-system reference |
+| `get_boundary_warnings` | Sub-lord credibility check. A CRITICAL lagna flag gives less weight to traits that come from the ascendant | KP |
+| `get_shadbala` | Six-fold planetary strength. It tests whether strength, or only placement, supports a "strong planet" trait claim | Vedic Parashari, cross-system reference |
+| `get_arudha_lagna` | The Arudha Lagna, the projected public image. It drives the **Public image** chart signal | Jaimini, cross-system reference |
+| `get_chara_karakas` | The Atmakaraka, the soul's deepest craving. It drives the **Core drive** signal | Jaimini, cross-system reference |
+| `get_d2_chart` | The D2 (Hora) divisional chart, the capacity to acquire wealth. It drives the **Spending capacity** signal | Vedic Parashari, cross-system reference |
 
-Five of the eleven tools are not orthodox Krishnamurti Paddhati (KP): three Vedic Parashari, two
-Jaimini. The system prompt tags each one inline, and the four chart signals shown in the personality
-card (public image, core drive, strongest planet, spending capacity) name their system so a buyer
-sees a cross-system reading, never a KP finding presented as one. Roughly a third of the Lumin MCP
-server's surface is non-KP, so this discipline matters on almost every app built on it.
+Five of the eleven tools are not orthodox Krishnamurti Paddhati (KP). Three are Vedic Parashari,
+and two are Jaimini. The system prompt tags each one inline. The personality card shows four chart
+signals: public image, core drive, strongest planet and spending capacity. Each signal names its
+system. So a buyer sees a cross-system reading, never a KP finding presented as one.
+
+Roughly a third of the Lumin MCP server's surface is not KP. So this discipline matters on almost
+every app built on it.
 
 ## What it costs
 
@@ -40,30 +42,35 @@ server's surface is non-KP, so this discipline matters on almost every app built
 | As shipped, all eleven tools | **11** |
 | Minimum useful matcher (`get_full_chart` and `get_planets` only, trait mapping from sign placements) | 2 |
 
-The free plan is 300 tool calls per month per credential, so the shipped path runs about 27 matches
-a month on the free tier. The minimum path drops the credibility check and all four chart signals,
-leaving only the sign-placement trait mapping.
+The free plan is 300 tool calls a month per account, shared by all of its keys. So the shipped path
+runs about 27 matches a month on the free plan. The minimum path removes the credibility check and
+all four chart signals. Only the trait mapping from sign placements remains.
 
 ## The detail worth copying
 
-**The business logic lives in the server-side prompt** (`src/lib/prompt.ts`): city resolution,
-planet-to-trait mapping, the four chart-signal sources, catalog rules. The Lumin tools stay generic.
-Same integration pattern as the sibling `wellness-matcher`, just a different mapping layer and a
-broader catalog.
+**The business logic lives in the server-side prompt**, `src/lib/prompt.ts`. It holds the city
+resolution, the planet-to-trait mapping, the sources of the four chart signals and the catalog
+rules. The Lumin tools stay generic. This app uses the same integration pattern as the sibling
+`wellness-matcher`. Only the mapping layer differs, and this catalog is broader.
 
-The form asks for a free-text birth city ("Colombo, Sri Lanka", "Mumbai", "London, UK"). The model
-resolves it to coordinates and the historical UTC offset from its own geographic knowledge, so the
-demo needs no separate geocoding API. The resolved coordinates are surfaced in the response so a
-visitor can verify the right city was used. For production traffic, swap in a real geocoding API
-(OpenCage, Google, Nominatim) before the Lumin call.
+The form asks for the birth city as free text, such as "Colombo, Sri Lanka", "Mumbai" or "London,
+UK". The model resolves the city to coordinates and the historical UTC offset from its own
+geographic knowledge. So the demo needs no separate geocoding API. The response includes the
+resolved coordinates, so a visitor can check that the app used the right city. For production
+traffic, use a real geocoding API (OpenCage, Google, Nominatim) before the Lumin call.
 
 ## Birth-time fallback
 
 Most e-commerce visitors do not know their exact birth time. The form lets them tick "I don't know
-my birth time": the app defaults to 12:00 noon and the prompt skips ascendant and cusp logic,
-relying on planet placements plus Moon nakshatra only. `get_arudha_lagna` depends on the ascendant,
-so the Public image signal is skipped; Core drive and Spending capacity still work from planetary
-degrees and longitude; Strongest planet becomes approximate. The summary begins by saying so.
+my birth time". When a visitor ticks it:
+
+- The app uses 12:00 noon as the birth time.
+- The prompt skips the ascendant and cusp logic. It uses only the planet placements and the Moon
+  nakshatra.
+- The prompt skips the Public image signal, because `get_arudha_lagna` depends on the ascendant.
+- Core drive and Spending capacity still work from planetary degrees and longitude.
+- Strongest planet becomes approximate.
+- The summary begins with a note about this.
 
 ## Run it
 
@@ -72,7 +79,7 @@ degrees and longitude; Strongest planet becomes approximate. The summary begins 
 bun install
 cp apps/products-matcher/.env.example apps/products-matcher/.env.local
 # ANTHROPIC_API_KEY  your model key
-# LUMIN_API_KEY      from https://app.lumin.guru/developer
+# LUMIN_API_KEY      from https://app.lumin.guru/api-keys
 
 bun run --filter products-matcher dev   # http://localhost:3101
 ```
@@ -82,8 +89,8 @@ bun run --filter products-matcher dev   # http://localhost:3101
 1. Replace `src/data/catalog.json` with your own products (same schema).
 2. Edit `src/lib/prompt.ts` to adjust the planet-to-trait mapping or add your brand's voice.
 3. Restyle `src/app/globals.css` and `src/components/*` with your colors and typography.
-4. Add a personal timing layer: `get_smart_current_dasha` or `get_sublord_changes` would let a
-   product page say "favorable this week" without turning the app into a full reading.
+4. Add a personal timing layer. With `get_smart_current_dasha` or `get_sublord_changes`, a product
+   page could say "favorable this week". The app would not become a full reading.
 
 ## The disclaimer it ships
 
@@ -91,8 +98,8 @@ bun run --filter products-matcher dev   # http://localhost:3101
 > chart read with Vedic Parashari and Jaimini cross-system references, named as such in the chart
 > signals above.
 
-It is mandated in the system prompt, validated as a required field when the response arrives, and
-rendered by `PersonalityCard` beneath the chart signals.
+The system prompt requires it. The route checks it as a required field when the response arrives.
+`PersonalityCard` shows it below the chart signals.
 
 ## License
 

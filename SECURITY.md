@@ -2,36 +2,44 @@
 
 ## Reporting
 
-Email contact@lumin.guru. Please do not open a public issue for a vulnerability.
+To report a vulnerability, email contact@lumin.guru. Please do not open a public issue for it.
 
-## Keys, in these examples
+## Keys in these examples
 
-**`ANTHROPIC_API_KEY` and `LUMIN_API_KEY` are server-side only.** Every example calls the model from
-a route handler (`export const runtime = "nodejs"`) precisely so the keys stay on the server. Never
-move either into a `NEXT_PUBLIC_*` variable: Next inlines those into the client bundle, and the key
-ships to every visitor.
+**`ANTHROPIC_API_KEY` and `LUMIN_API_KEY` stay on the server.** Every example calls the model from a
+route handler (`export const runtime = "nodejs"`), so that the keys stay on the server. Never move
+either key into a `NEXT_PUBLIC_*` variable. Next puts those variables into the client bundle, and
+then the key goes to every visitor.
 
-`.env.local` is gitignored in every app. `.env.example` carries placeholders only, never a real key.
+Git ignores `.env.local` in every app. `.env.example` holds placeholders only, never a real key.
 
-If you deploy one of these, set both keys as encrypted environment variables in your host's
-dashboard. A Lumin key can be rotated at https://app.lumin.guru/developer.
+If you deploy an example, set both keys as encrypted environment variables in your host's
+dashboard. To rotate a Lumin key, create a new key and revoke the old one at
+https://app.lumin.guru/api-keys.
 
 ## Birth data is personal data
 
-Birth date, birth time and birth coordinates together are among the most identifying tuples a
-product can hold, and in several jurisdictions the inferences drawn from them attract additional
-protection. These examples do not persist anything: input arrives in a request, goes to the model,
-and the response is returned without being written anywhere. **That is a property of the examples,
-not of your product.** If you add storage, you inherit the obligations: a lawful basis, a retention
-period, deletion on request, and disclosure in your privacy notice.
+Birth date, birth time and birth coordinates together are one of the most identifying combinations
+of data that a product can hold. In several jurisdictions, the inferences from them get additional
+protection.
 
-Three of the apps here (`today-panel`, `horary-desk`, `weather-windows`) collect no personal data at
-all. If your feature can be built on one of those input classes, it is the cheaper path in every
-sense.
+These examples store nothing. Input arrives in a request and goes to the model. The route returns
+the response and writes it nowhere. **That is a property of the examples, not of your product.** If
+you add storage, you get these obligations:
+
+- a lawful basis
+- a retention period
+- deletion on request
+- disclosure in your privacy notice
+
+Three of the apps need no birth data: `today-panel`, `horary-desk` and `weather-windows`. Two of
+them, `today-panel` and `weather-windows`, collect no personal data at all. `horary-desk` asks the
+browser for the asker's location. The person can refuse, or change the coordinates by hand. If you
+can build your feature on one of these input classes, it is the cheaper path in every sense.
 
 ## Model output is not trusted input
 
-Every route validates the model's JSON against an explicit shape before rendering, and the commerce
-examples join returned IDs against a real catalog server-side rather than rendering names and prices
-the model produced. Keep both habits when you fork: they are what stops a hallucinated SKU, a
-hallucinated price, or a malformed payload reaching a user.
+Every route validates the model's JSON against an explicit shape before it renders. The commerce
+examples also find each returned ID in a real catalog on the server. They do not render names and
+prices that the model produced. Keep both habits when you fork. They stop a hallucinated SKU, a
+hallucinated price or a malformed payload before it reaches a user.
