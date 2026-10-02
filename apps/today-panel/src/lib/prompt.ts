@@ -1,4 +1,4 @@
-import type { PlaceInput } from "./types";
+import type { ResolvedPlaceInput } from "./types";
 
 /**
  * The five tools this app is allowed to call. Deny-by-default: the model can
@@ -40,7 +40,11 @@ Call all five. They are independent, so call them together rather than in sequen
 # Method
 
 1. Resolve the city to latitude and longitude yourself, from your own knowledge.
-   Use the utc_offset_minutes the caller gives you. Do not guess the offset.
+   Also name the IANA time zone the city is in, such as "Europe/London", as
+   place.cityTimeZone. Use the utc_offset_minutes the caller gives you on every
+   tool, even when the city's zone looks different. The app read it from the
+   time zone the person chose, and it checks it against place.cityTimeZone. Do
+   not guess the offset.
 2. The astrological day runs sunrise to sunrise, so pass utc_offset_minutes on
    every tool that accepts it. Without it the whole panel can land on the wrong
    civil day.
@@ -62,7 +66,7 @@ describe them as a KP finding.
 Return ONLY a JSON object. No prose before or after, no code fence.
 
 {
-  "place": { "label": string, "latitude": number, "longitude": number, "utcOffsetMinutes": number },
+  "place": { "label": string, "latitude": number, "longitude": number, "cityTimeZone": string },
   "date": "YYYY-MM-DD",
   "panchang": {
     "tithi": string, "nakshatra": string, "yoga": string, "karana": string,
@@ -106,10 +110,11 @@ Plain and specific. No em dashes, use commas. No emoji. Traditional terms
 let the interpretation field carry the plain-language meaning.`;
 }
 
-export function buildUserPrompt(input: PlaceInput): string {
+export function buildUserPrompt(input: ResolvedPlaceInput): string {
   return `City: ${input.city}
 Date: ${input.date}
-UTC offset in minutes: ${input.utcOffsetMinutes}
+Time zone the person chose: ${input.timeZone}
+UTC offset in minutes on that date: ${input.utcOffsetMinutes}
 
 Build the panel for that city and date.`;
 }

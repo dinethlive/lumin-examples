@@ -1,3 +1,4 @@
+import { formatUtcOffset } from "@lumin-examples/client/zone";
 import type {
   BandQuality,
   ChoghadiyaPeriod,
@@ -90,8 +91,20 @@ export function Panel({ data }: { data: TodayResponse }) {
         <p className="mt-0.5 text-sm text-black/60">
           {data.panchang.weekday}, {data.date}. Sunrise{" "}
           {localTime(data.panchang.sunriseUTC, offset)}, sunset{" "}
-          {localTime(data.panchang.sunsetUTC, offset)}.
+          {localTime(data.panchang.sunsetUTC, offset)}. Times are in {data.place.timeZone}, UTC
+          {formatUtcOffset(offset)}.
         </p>
+        {data.place.zoneMismatch && (
+          <p
+            role="note"
+            className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200"
+          >
+            {data.place.label} keeps {data.place.zoneMismatch.cityTimeZone} time, UTC
+            {formatUtcOffset(data.place.zoneMismatch.cityOffsetMinutes)} on that date. This panel
+            used {data.place.timeZone}, so its times are on the wrong clock. Change the time zone to{" "}
+            {data.place.zoneMismatch.cityTimeZone} and build the panel again.
+          </p>
+        )}
         <p className="mt-3 text-sm text-black/80">{data.summary}</p>
       </header>
 

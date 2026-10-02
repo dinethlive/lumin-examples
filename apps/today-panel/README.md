@@ -41,8 +41,16 @@ perfectly. One set of calls per city per day serves every visitor.
 
 **The astrological day runs from sunrise to sunrise, so every request must carry `utc_offset_minutes`.** The
 offset decides which civil day the request means. Without it, every band east of Greenwich falls a
-day early. Most implementations get this detail wrong. The form gets a default offset from the
-browser. The route rejects a request without an offset.
+day early. Most implementations get this detail wrong.
+
+The offset must be the city's offset on that date. The visitor's browser offset is wrong for a city in
+another zone. So the form asks for the city's IANA time zone. It takes the zone from the typed city
+when a zone has that name (London becomes Europe/London), and from the browser otherwise. The
+route reads the offset for the date from the tz database, with `offsetMinutesAt`. The route rejects
+a request without a known zone.
+
+The model also names the zone that the city is in. That zone can run a different offset on the
+date. Then the panel says that its times are on the wrong clock, and it names the zone to use.
 
 Two smaller details are worth copying too:
 
@@ -72,7 +80,7 @@ bun run --filter today-panel dev   # http://localhost:3110
   that the app then collects birth data.
 - **Change the bands.** If 24 rows are too many for your surface, remove hora. For a compact widget,
   keep only `currentPeriod` and `currentHora`.
-- **Cache it.** The response is a pure function of the city, the date and the offset. Put it behind
+- **Cache it.** The response is a pure function of the city, the date and the time zone. Put it behind
   a daily cache with those three values as its key. Then the tool cost for each visitor falls to
   zero.
 - **Embed it.** The app has no personal data and no signup. So it renders well as a public page or

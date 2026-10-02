@@ -8,20 +8,43 @@ export type PlaceInput = {
   /** Free text, e.g. "Colombo, Sri Lanka". The model resolves it to coordinates. */
   city: string;
   /**
-   * Minutes east of UTC. Required, not optional: the astrological day runs
-   * sunrise to sunrise, so the offset is what decides which civil day is meant.
-   * Getting this wrong makes every band a day early east of Greenwich.
+   * IANA time zone of the city, such as "Europe/London". The route reads the
+   * offset for the date from it. The astrological day runs sunrise to sunrise,
+   * so the offset decides which civil day is meant. A wrong one makes every
+   * band a day early east of Greenwich.
    */
-  utcOffsetMinutes: number;
+  timeZone: string;
   /** YYYY-MM-DD. Defaults to the visitor's today. */
   date: string;
+};
+
+/** The input after the route read the offset for the date from the time zone. */
+export type ResolvedPlaceInput = PlaceInput & {
+  utcOffsetMinutes: number;
+};
+
+/** The place as the model writes it, before the route adds the clock it used. */
+export type ModelPlace = {
+  label: string;
+  latitude: number;
+  longitude: number;
+  /** The IANA zone the city is in, from the model's own knowledge. */
+  cityTimeZone: string;
 };
 
 export type ResolvedPlace = {
   label: string;
   latitude: number;
   longitude: number;
+  /** The zone the panel used, from the form. */
+  timeZone: string;
+  /** Minutes east of UTC in timeZone on the date. The route computes it. */
   utcOffsetMinutes: number;
+  /**
+   * Set when the city's own zone runs a different offset on the date. Every
+   * time on the panel is then on the wrong clock, so the panel says so.
+   */
+  zoneMismatch?: { cityTimeZone: string; cityOffsetMinutes: number };
 };
 
 /** get_panchang */
@@ -77,6 +100,11 @@ export type SubLordChange = {
   currentSubLord: string;
   nextSubLord: string;
   hoursUntilChange: number;
+};
+
+/** The JSON the model writes, before the route sets the place's clock. */
+export type TodayModelResponse = Omit<TodayResponse, "place"> & {
+  place: ModelPlace;
 };
 
 export type TodayResponse = {

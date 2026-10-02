@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { formatUtcOffset, isKnownTimeZone, offsetMinutesAt } from "@lumin-examples/client/zone";
 import type { PlaceInput, TodayResponse } from "@/lib/types";
 
 /** Named phases, so a 30 second wait shows progress instead of a spinner. */
@@ -15,9 +16,25 @@ type Props = {
   onResult: (data: TodayResponse) => void;
 };
 
-/** The browser knows the visitor's offset. Ask the tools with the real one. */
-function localOffsetMinutes(): number {
-  return -new Date().getTimezoneOffset();
+/**
+ * The zone whose name ends in the typed city, such as "Europe/London" for
+ * "London, UK". Many cities have no zone of their own (Mumbai is Asia/Kolkata),
+ * so a miss keeps the current zone, and the route checks it against the city.
+ */
+function zoneForCity(city: string, zones: string[]): string | null {
+  const name = city.split(",")[0].trim().toLowerCase().replace(/\s+/g, "_");
+  if (!name) return null;
+  return zones.find((zone) => zone.toLowerCase().split("/").pop() === name) ?? null;
+}
+
+/** What clocks read in the zone on the date, so a wrong zone shows itself. */
+function zoneHint(timeZone: string, date: string): string {
+  if (!isKnownTimeZone(timeZone)) {
+    return "Use an IANA name, such as Asia/Colombo, Europe/London or America/New_York.";
+  }
+  const offset = offsetMinutesAt(timeZone, `${date}T12:00:00`);
+  if (offset === null) return "Enter the date to see the offset.";
+  return `Clocks there read UTC${formatUtcOffset(offset)} on that date. The day runs sunrise to sunrise, so the zone decides which civil day is meant.`;
 }
 
 function todayLocalISO(): string {
@@ -31,10 +48,28 @@ function todayLocalISO(): string {
 export function CityForm({ onResult }: Props) {
   const [city, setCity] = useState("Colombo, Sri Lanka");
   const [date, setDate] = useState(todayLocalISO());
-  const [offset, setOffset] = useState(localOffsetMinutes());
+  const [timeZone, setTimeZone] = useState("");
+  const [zoneEdited, setZoneEdited] = useState(false);
+  const [zones, setZones] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  // Filled after mount, because the server and the browser can carry different
+  // zone lists. The default is the typed city's zone, else the visitor's own.
+  useEffect(() => {
+    const list = Intl.supportedValuesOf("timeZone");
+    setZones(list);
+    setTimeZone((current) => current || zoneForCity(city, list) || Intl.DateTimeFormat().resolvedOptions().timeZone);
+    // Runs once, with the first city. Later city edits go through changeCity.
+  }, []);
+
+  function changeCity(next: string) {
+    setCity(next);
+    if (zoneEdited) return;
+    const match = zoneForCity(next, zones);
+    if (match) setTimeZone(match);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,7 +85,7 @@ export function CityForm({ onResult }: Props) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 90_000);
 
-    const payload: PlaceInput = { city, date, utcOffsetMinutes: offset };
+    const payload: PlaceInput = { city, date, timeZone };
 
     try {
       const res = await fetch("/api/today", {
@@ -96,7 +131,7 @@ export function CityForm({ onResult }: Props) {
           <span className="mb-1.5 block text-sm font-medium text-black/70">City</span>
           <input
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(e) => changeCity(e.target.value)}
             placeholder="Colombo, Sri Lanka"
             required
             className="min-h-[44px] w-full rounded-lg bg-white px-3 py-2 ring-1 ring-black/[0.08] outline-none focus:ring-2 focus:ring-black/20"
@@ -115,22 +150,26 @@ export function CityForm({ onResult }: Props) {
       </div>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-black/70">
-          UTC offset in minutes
-        </span>
+        <span className="mb-1.5 block text-sm font-medium text-black/70">Time zone</span>
         <input
-          type="number"
-          value={offset}
-          onChange={(e) => setOffset(Number(e.target.value))}
-          min={-720}
-          max={840}
+          value={timeZone}
+          onChange={(e) => {
+            setZoneEdited(true);
+            setTimeZone(e.target.value.trim());
+          }}
+          list="time-zones"
+          placeholder="e.g. Asia/Colombo"
           required
-          className="min-h-[44px] w-full rounded-lg bg-white px-3 py-2 ring-1 ring-black/[0.08] outline-none focus:ring-2 focus:ring-black/20 sm:max-w-[220px]"
+          autoComplete="off"
+          spellCheck={false}
+          className="min-h-[44px] w-full rounded-lg bg-white px-3 py-2 ring-1 ring-black/[0.08] outline-none focus:ring-2 focus:ring-black/20 sm:max-w-[280px]"
         />
-        <span className="mt-1.5 block text-xs text-black/50">
-          The day runs sunrise to sunrise, so the offset decides which civil day is
-          meant. Prefilled from your browser.
-        </span>
+        <datalist id="time-zones">
+          {zones.map((zone) => (
+            <option key={zone} value={zone} />
+          ))}
+        </datalist>
+        <span className="mt-1.5 block text-xs text-black/50">{zoneHint(timeZone, date)}</span>
       </label>
 
       <button
