@@ -5,6 +5,9 @@ import type {
   ConfidenceLevel,
   GateVerdict,
   HoraryResponse,
+  LostQueryType,
+  NumberMethod,
+  RulingPlanetsSpread,
   TypeSpecific,
 } from "@/lib/types";
 import { TrendFollowUp } from "./TrendFollowUp";
@@ -87,10 +90,100 @@ function HouseChips({ label, houses, tone }: { label: string; houses: number[]; 
   );
 }
 
+/** A small label naming the system a method belongs to, so a KP-extended
+ * method is never read as KSK's own. */
+function SystemChip({ system }: { system: string }) {
+  const extended = system.toLowerCase().includes("extended");
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+        extended ? "bg-sky-100 text-sky-900" : "bg-black/[0.06] text-black/70"
+      }`}
+    >
+      {system}
+    </span>
+  );
+}
+
+function NumberMethodsCard({ methods }: { methods: NumberMethod[] }) {
+  return (
+    <Card
+      title="How the number is checked"
+      subtitle="Stated methods side by side, from get_horary_number_intuition. None is picked and none gates the verdict."
+    >
+      <ul className="space-y-3">
+        {methods.map((m) => (
+          <li key={m.id} className="border-l-2 border-black/10 pl-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs text-black/60">{m.id}</span>
+              <SystemChip system={m.system} />
+            </div>
+            <p className="mt-1 text-sm text-black/80">{m.finding}</p>
+            <p className="mt-0.5 text-xs text-black/50">{m.source}</p>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function RulingPlanetsCard({ spread }: { spread: RulingPlanetsSpread }) {
+  return (
+    <Card
+      title="Ruling planets, two definitions"
+      subtitle="Both stated definitions side by side. The reading uses the one marked as applied; the other is reported only."
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        {spread.variants.map((v) => (
+          <div
+            key={v.id}
+            className="rounded-lg bg-black/[0.03] px-3 py-2 ring-1 ring-black/[0.06]"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs text-black/60">{v.id}</span>
+              <SystemChip system={v.system} />
+              <span className="text-[10px] font-medium uppercase tracking-wide text-black/50">
+                {v.applied ? "applied" : "reported only"}
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {v.planets.length === 0 ? (
+                <span className="text-xs text-black/40">none</span>
+              ) : (
+                v.planets.map((p, i) => (
+                  <span
+                    key={`${p}-${i}`}
+                    className="rounded-md bg-white px-2 py-0.5 text-xs font-medium ring-1 ring-black/[0.08]"
+                  >
+                    {p}
+                  </span>
+                ))
+              )}
+            </div>
+            <p className="mt-2 text-xs text-black/50">{v.source}</p>
+          </div>
+        ))}
+      </div>
+      {spread.difference && (
+        <p className="mt-3 text-sm text-black/70">{spread.difference}</p>
+      )}
+    </Card>
+  );
+}
+
+const LOST_QUERY_LABEL: Record<LostQueryType, string> = {
+  lost: "Lost article",
+  theft: "Theft",
+  missing_person: "Missing person",
+};
+
 function TypeSpecificCard({ ts }: { ts: NonNullable<TypeSpecific> }) {
   if (ts.kind === "lost") {
     return (
-      <Card title="Direction and recovery" subtitle="get_lost_or_missing">
+      <Card
+        title={`Where and whether: ${LOST_QUERY_LABEL[ts.queryType] ?? ts.queryType}`}
+        subtitle="get_lost_article_location, get_lost_article_recovery, get_lost_article_nature, get_lost_article_thief"
+      >
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
           <div>
             <dt className="text-xs text-black/50">Direction</dt>
@@ -108,7 +201,16 @@ function TypeSpecificCard({ ts }: { ts: NonNullable<TypeSpecific> }) {
             <dt className="text-xs text-black/50">Recovery</dt>
             <dd className="font-medium">{ts.recoveryVerdict}</dd>
           </div>
+          {ts.articleNature && (
+            <div>
+              <dt className="text-xs text-black/50">Nature of the article</dt>
+              <dd className="font-medium">{ts.articleNature}</dd>
+            </div>
+          )}
         </dl>
+        {ts.recoveryRationale && (
+          <p className="mt-4 text-sm text-black/70">{ts.recoveryRationale}</p>
+        )}
         {ts.thiefDescription && (
           <p className="mt-4 rounded-lg bg-black/[0.03] px-3 py-2 text-xs text-black/70 ring-1 ring-black/[0.06]">
             A class description only, never an identification: {ts.thiefDescription}
@@ -176,6 +278,17 @@ export function VerdictPanel({
   const [trendOpen, setTrendOpen] = useState(false);
   const offset = data.moment.utcOffsetMinutes;
 
+  // The number's stated methods and the two ruling-planet definitions describe
+  // the number and the moment, not the outcome, so they show in both states.
+  const spreads = (
+    <>
+      {data.numberMethods.length > 0 && <NumberMethodsCard methods={data.numberMethods} />}
+      {data.rulingPlanets.variants.length > 0 && (
+        <RulingPlanetsCard spread={data.rulingPlanets} />
+      )}
+    </>
+  );
+
   return (
     <div className="space-y-5">
       <header className="rounded-xl bg-white p-5 ring-1 ring-black/[0.08]">
@@ -218,6 +331,8 @@ export function VerdictPanel({
           </button>
         )}
       </section>
+
+      {data.gate.verdict === "WITHHELD" && spreads}
 
       {data.gate.verdict === "ANSWERED" && data.verdict && (
         <>
@@ -263,8 +378,13 @@ export function VerdictPanel({
 
           {data.typeSpecific && <TypeSpecificCard ts={data.typeSpecific} />}
 
+          {spreads}
+
           {data.timing.windows.length > 0 && (
-            <Card title="Timing" subtitle="Dated windows the tools actually returned">
+            <Card
+              title="Timing"
+              subtitle="Dated windows the tools actually returned, in the tool's own order. The reasoning above says how many were read."
+            >
               <ul className="space-y-2">
                 {data.timing.windows.map((w, i) => (
                   <li

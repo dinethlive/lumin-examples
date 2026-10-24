@@ -43,8 +43,12 @@ function validateInput(body: unknown): TrendInput | string {
     if (typeof s.number !== "number" || !Number.isInteger(s.number) || s.number < 1 || s.number > 249) {
       return "each session needs a number between 1 and 249";
     }
-    if (typeof s.datetimeUTC !== "string" || !s.datetimeUTC.trim()) {
-      return "each session needs a datetimeUTC";
+    if (
+      typeof s.datetimeUTC !== "string" ||
+      !s.datetimeUTC.trim() ||
+      Number.isNaN(Date.parse(s.datetimeUTC))
+    ) {
+      return "each session needs a datetimeUTC as an ISO 8601 instant";
     }
     sessions.push({
       question: s.question.trim(),
@@ -105,6 +109,9 @@ function validateShape(data: TrendResponse): string | null {
   }
   if (typeof data.disclaimer !== "string" || !data.disclaimer.trim()) {
     return "response is missing the disclaimer";
+  }
+  if (!data.disclaimer.startsWith("A reflective lens on a question asked at a moment, not advice.")) {
+    return "disclaimer does not match the mandated text";
   }
   return null;
 }

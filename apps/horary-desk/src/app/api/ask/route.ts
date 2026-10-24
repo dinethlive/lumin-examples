@@ -6,12 +6,18 @@ import {
   ensureShape,
   LuminClientError,
 } from "@lumin-examples/client";
-import { ALLOWED_TOOLS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt";
+import {
+  ALLOWED_TOOLS,
+  buildSystemPrompt,
+  buildUserPrompt,
+  judgementLocal,
+} from "@/lib/prompt";
 import type { AskInput, HoraryResponse, QuestionType } from "@/lib/types";
 
 export const runtime = "nodejs";
-/** The loading copy promises 15 to 45 seconds, so this has room above that. */
-export const maxDuration = 75;
+/** A lost question reads up to four step tools plus every recovery page, so
+ * this has room well above the 20 to 90 seconds the loading copy promises. */
+export const maxDuration = 300;
 
 const ROUTE = "/api/ask";
 
@@ -87,6 +93,7 @@ function validateInput(body: unknown): AskInput | string {
 const GATE_VERDICTS = new Set(["ANSWERED", "WITHHELD"]);
 const CONFIDENCE_LEVELS = new Set(["high", "moderate", "low"]);
 const TYPE_SPECIFIC_KINDS = new Set(["medical", "career", "lost", "arrival"]);
+const LOST_QUERY_TYPES = new Set(["lost", "theft", "missing_person"]);
 
 function validateShape(data: HoraryResponse): string | null {
   if (typeof data.question !== "string" || !data.question.trim()) {
@@ -132,6 +139,44 @@ function validateShape(data: HoraryResponse): string | null {
     }
   }
 
+  // The number's stated methods and the two ruling-planet definitions are
+  // side-by-side spreads: every entry needs its own system label, and the
+  // shape has no field for a picked winner.
+  if (!Array.isArray(data.numberMethods) || data.numberMethods.length === 0) {
+    return "response is missing the number methods";
+  }
+  for (const m of data.numberMethods) {
+    if (
+      typeof m.id !== "string" ||
+      typeof m.system !== "string" ||
+      !m.system.trim() ||
+      typeof m.source !== "string" ||
+      typeof m.finding !== "string"
+    ) {
+      return "a number method is missing a field";
+    }
+  }
+  if (
+    !data.rulingPlanets ||
+    !Array.isArray(data.rulingPlanets.variants) ||
+    data.rulingPlanets.variants.length === 0 ||
+    typeof data.rulingPlanets.difference !== "string"
+  ) {
+    return "response is missing the ruling planet variants";
+  }
+  for (const v of data.rulingPlanets.variants) {
+    if (
+      typeof v.id !== "string" ||
+      typeof v.system !== "string" ||
+      !v.system.trim() ||
+      typeof v.source !== "string" ||
+      typeof v.applied !== "boolean" ||
+      !Array.isArray(v.planets)
+    ) {
+      return "a ruling planet variant is missing a field";
+    }
+  }
+
   if (!Array.isArray(data.reasoning) || data.reasoning.length === 0) {
     return "response has no reasoning steps";
   }
@@ -147,6 +192,9 @@ function validateShape(data: HoraryResponse): string | null {
   if (data.gate.verdict === "WITHHELD" && data.timing.windows.length > 0) {
     return "gate is WITHHELD but timing windows were still returned";
   }
+  if (data.timing.windows.length > 12) {
+    return "timing.windows carries more than the 12 the screen shows";
+  }
 
   if (data.typeSpecific !== null) {
     if (!TYPE_SPECIFIC_KINDS.has(data.typeSpecific.kind)) {
@@ -154,6 +202,25 @@ function validateShape(data: HoraryResponse): string | null {
     }
     if (data.typeSpecific.kind !== data.questionType) {
       return "typeSpecific.kind does not match questionType";
+    }
+    if (data.typeSpecific.kind === "lost") {
+      const lost = data.typeSpecific;
+      if (!LOST_QUERY_TYPES.has(lost.queryType)) {
+        return `invalid lost queryType: ${lost.queryType}`;
+      }
+      for (const f of ["direction", "distanceClass", "inHouseLocation", "recoveryVerdict", "recoveryRationale"] as const) {
+        if (typeof lost[f] !== "string" || !lost[f].trim()) {
+          return `lost reading is missing ${f}`;
+        }
+      }
+      // The nature step runs for lost and theft, the thief step for theft and
+      // a missing person. A field from a step that did not run must be null.
+      if (lost.queryType === "missing_person" && lost.articleNature !== null) {
+        return "articleNature must be null for a missing person";
+      }
+      if (lost.queryType === "lost" && lost.thiefDescription !== null) {
+        return "thiefDescription must be null for a lost article";
+      }
     }
   } else if (data.questionType !== "general") {
     return `typeSpecific is missing for a ${data.questionType} question`;
@@ -190,9 +257,10 @@ export async function POST(req: NextRequest) {
     const result = await runLumin({
       allowedTools: ALLOWED_TOOLS,
       system: buildSystemPrompt(),
-      user: buildUserPrompt(input),
-      // 2 to 3 tool calls and a chart-sized payload each. Comfortable headroom.
-      maxTokens: 16000,
+      user: buildUserPrompt(input, judgementLocal(input.utcOffsetMinutes)),
+      // 2 to 5 tool calls (more when recovery pages), a chart-sized payload
+      // each, and two side-by-side spreads to copy out. Comfortable headroom.
+      maxTokens: 24000,
       // A gate to reason through correctly, not just a lookup. xhigh is worth it.
       effort: "xhigh",
       signal: req.signal,

@@ -44,7 +44,7 @@ export type GateVerdict = "ANSWERED" | "WITHHELD";
  * From get_horary_chart_v2's moonConnectivity check, folded together with a
  * type-specific tool's own withhold verdict when one exists (get_medical_horary
  * and get_career_horary both carry a WITHHELD value in their own verdict enum,
- * and get_lost_or_missing can return WITHHELD when its 11th cuspal sub lord has
+ * and get_lost_article_recovery can return WITHHELD when its 11th cuspal sub lord has
  * no overlap with either the recovery or the loss houses). Either source can
  * flip this to WITHHELD; the reason names which one fired.
  */
@@ -72,7 +72,7 @@ export type ConfidenceLevel = "high" | "moderate" | "low";
 
 /**
  * The core reading. `label` is the plain-language answer, `confidence` comes
- * from get_horary_advanced's number-intuition check (self-confirmatory number
+ * from get_horary_number_intuition's verdict (self-confirmatory number
  * reads high, a weakly-chosen number reads moderate). requiredHouses/covered/
  * missing come straight off get_horary_chart_v2's moonConnectivity block.
  */
@@ -84,14 +84,27 @@ export type Verdict = {
   missing: number[];
 };
 
-/** get_lost_or_missing. Never names a real individual as the thief; the tool
- * itself only returns a class description (stature, age, relation-class). */
+export type LostQueryType = "lost" | "theft" | "missing_person";
+
+/**
+ * The four lost-article step tools, each casting the same chart:
+ * get_lost_article_location (direction, distanceClass, inHouseLocation),
+ * get_lost_article_recovery (recoveryVerdict, recoveryRationale, and the
+ * dated recovery periods, which land in timing.windows),
+ * get_lost_article_nature (articleNature, lost or theft only) and
+ * get_lost_article_thief (thiefDescription, theft or missing person only).
+ * Never names a real individual as the thief; the tool itself only returns a
+ * class description (stature, age, relation-class).
+ */
 export type LostTypeSpecific = {
   kind: "lost";
+  queryType: LostQueryType;
   direction: string;
   distanceClass: string;
   inHouseLocation: string;
+  articleNature: string | null;
   recoveryVerdict: string;
+  recoveryRationale: string;
   thiefDescription: string | null;
 };
 
@@ -131,13 +144,44 @@ export type TypeSpecific =
   | ArrivalTypeSpecific
   | null;
 
+/**
+ * One stated method of checking a horary number, from
+ * get_horary_number_intuition's numberMethods block. Shown side by side,
+ * none picked, none gating the verdict. `system` is KP or KP-extended as the
+ * tool labels it.
+ */
+export type NumberMethod = {
+  id: string;
+  system: string;
+  source: string;
+  finding: string;
+};
+
+/**
+ * One stated definition of a number chart's ruling planets, from
+ * get_horary_number_intuition's rulingPlanetsVariants block. `applied` is
+ * true for the one KP judgement reads (KSK's); the other is reported only.
+ */
+export type RulingPlanetsVariant = {
+  id: string;
+  system: string;
+  source: string;
+  applied: boolean;
+  planets: string[];
+};
+
+export type RulingPlanetsSpread = {
+  variants: RulingPlanetsVariant[];
+  difference: string;
+};
+
 export type HoraryResponse = {
   question: string;
   questionType: QuestionType;
   number: number;
   moment: Moment;
-  /** The catalog event get_horary_chart_v2 and get_horary_advanced were
-   * checked against (e.g. "Career / Job Start"). For "lost" and "arrival"
+  /** The catalog event get_horary_chart_v2 and get_horary_number_intuition
+   * were checked against (e.g. "Career / Job Start"). For "lost" and "arrival"
    * this is a labelled proxy: the 76-event catalog has no dedicated "lost
    * article" or "awaited arrival" entry, so the closest thematic match is
    * used and named here rather than silently forced. */
@@ -146,6 +190,10 @@ export type HoraryResponse = {
   /** Null exactly when gate.verdict is "WITHHELD". A withheld chart is a
    * complete, honest answer, never rendered as an error. */
   verdict: Verdict | null;
+  /** Shown whether or not the gate answered: the methods describe the
+   * number, not the outcome. */
+  numberMethods: NumberMethod[];
+  rulingPlanets: RulingPlanetsSpread;
   reasoning: ReasoningStep[];
   timing: { windows: TimingWindow[] };
   typeSpecific: TypeSpecific;
