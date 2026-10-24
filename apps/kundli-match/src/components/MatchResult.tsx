@@ -2,6 +2,7 @@ import { AgreementMeter } from "./AgreementMeter";
 import { ConfidencePills } from "./ConfidencePills";
 import { SystemsPanel } from "./SystemsPanel";
 import { DoshaCard } from "./DoshaCard";
+import { KpMarriageCard } from "./KpMarriageCard";
 import { PartnerProfileCard } from "./PartnerProfileCard";
 import { DisagreementDrawer } from "./DisagreementDrawer";
 import { DisclaimerNote } from "./DisclaimerNote";
@@ -14,6 +15,7 @@ export function MatchResult({ data }: { data: MatchResponse }) {
       <ConfidencePills confidence={data.confidence} />
       <SystemsPanel systems={data.systems} />
       <DoshaCard doshas={data.doshas} />
+      <KpMarriageCard kpMarriage={data.kpMarriage} />
       <PartnerProfileCard partnerProfile={data.partnerProfile} />
       <DisagreementDrawer disagreements={data.disagreements} />
       <DisclaimerNote text={data.disclaimer} />

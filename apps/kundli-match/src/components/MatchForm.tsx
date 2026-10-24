@@ -4,13 +4,15 @@ import { useState } from "react";
 import { PersonFields, TimeZoneList, defaultPerson } from "./PersonFields";
 import type { MatchInput, MatchResponse } from "@/lib/types";
 
-/** Named phases, so a 50 to 150 second wait shows progress instead of a spinner. */
+/** Named phases, so a 90 to 240 second wait shows progress instead of a spinner. */
 const LOADING_STEPS = [
   "Reading birth-time confidence for both charts",
   "Casting the 36-point Ashta Koota Milan",
   "Scoring the KP 7-factor compatibility read",
-  "Running the rigorous 6-cuspal-sub-lord read",
+  "Reading the KP cuspal sub lord factors",
+  "Finding when both charts run marriage-house periods",
   "Checking Manglik, Kalsarpa and the KP dissent",
+  "Reading Punarphoo and the KP discord rule in each chart",
   "Describing the spouse each chart implies",
   "Finding where the three systems disagree",
 ];
@@ -34,11 +36,11 @@ export function MatchForm({ onResult }: Props) {
 
     const ticker = setInterval(
       () => setStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1)),
-      13000,
+      20000,
     );
     // Matched to the route's maxDuration, so a hung request cannot spin forever.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 180_000);
+    const timeout = setTimeout(() => controller.abort(), 300_000);
 
     const payload: MatchInput = { personA, personB };
 
@@ -107,7 +109,7 @@ export function MatchForm({ onResult }: Props) {
 
       {loading && (
         <p className="text-sm text-black/50">
-          Eleven tool calls across the two charts, usually 50 to 150 seconds.
+          Fifteen tool calls across the two charts, usually 90 to 240 seconds.
         </p>
       )}
 
