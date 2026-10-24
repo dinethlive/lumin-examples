@@ -32,7 +32,7 @@ and no consent flow:
 get_ephemeris            get_sublord_changes      get_transit_crossings    get_rp_interval
 get_astro_weather        get_seasonal_outlook     get_weather_windows      get_monsoon_forecast
 get_panchang             get_choghadiya_today     get_hora_today
-get_horary_chart_v2      get_horary_advanced      get_medical_horary       get_career_horary
+get_horary_chart_v2      get_horary_validation_panel get_medical_horary       get_career_horary
 get_lost_or_missing      get_arrival_timing       get_horary_serial
 get_election_catalog     get_reading_protocol     get_tool_catalog
 ```
@@ -52,11 +52,11 @@ engine:
 
 | # | Product | Tool chain | Constraint |
 |---|---|---|---|
-| 1 | Match score on every profile card | `run_kundli_match_complete`, or expanded: `get_ashta_koota_milan`, `check_compatibility`, `get_compatibility_advanced` | Never present a low score as a reason a relationship will fail |
+| 1 | Match score on every profile card | `run_kundli_match_complete`, or expanded: `get_ashta_koota_milan`, `check_compatibility`, `get_compatibility_panel` | Never present a low score as a reason a relationship will fail |
 | 2 | The dosha filter users actually search on | `check_doshas`, `get_kalsarpa_variants`, `run_pre_verdict_audit` | Names which of 12 variants applies and carries the KP dissent. Never a disqualifier |
 | 3 | Partner-description prefill for search facets | `analyze_natal_promise`, `get_spouse_characteristics`, `get_upapada_lagna` | Suggestions, always editable |
 | 4 | When is marriage likely | `set_birth_profile`, `analyze_natal_promise`, `get_significators`, `get_ruling_planets`, `get_fruitful_significators`, `find_event_timing_v2`, `get_transit_timing_hierarchy`, `get_marriage_delay` | Windows, never single dates as certainties |
-| 5 | Second-marriage counselling lane | `analyze_natal_promise`, `get_marriage_advanced`, `get_event_dasha` | Advisor-facing only |
+| 5 | Second-marriage counselling lane | `analyze_natal_promise`, `get_second_marriage`, `get_event_dasha` | Advisor-facing only |
 | 6 | Separation-risk screening | `get_marital_separation`, `get_extramarital_signature` | **B2B advisor-only.** Never consumer-facing, never about a third party |
 | 7 | Chemistry card with no birth time | `get_nakshatra_details`, `get_chara_karakas`, `get_arudha_lagna`, `get_ayurvedic_constitution` | Entertainment framing |
 | 8 | Wedding date both families accept | `get_election_catalog`, `find_wedding_muhurta`, `find_joint_election_window`, `rank_candidate_dates` | The two-chart mode is a Lumin extension. Label it |
@@ -176,7 +176,7 @@ entry and the laying of a foundation use different house groups.
 | 54 | Venue dates ranked again by auspiciousness | `get_election_catalog`, `rank_candidate_dates`, `find_wedding_muhurta` | Label the joint mode as a Lumin extension |
 | 55 | Multi-day ceremony run sheet | `find_auspicious_time`, `get_choghadiya_today`, `get_hora_today` | None |
 | 56 | Corporate event and launch scheduling | `find_business_launch_time`, `find_meeting_time`, `get_mundane_ingress` | The mundane layer is a content lens |
-| 57 | Contract-signing slot in a deal room | `find_contract_signing_time`, `get_muhurta_advanced` | Not legal advice |
+| 57 | Contract-signing slot in a deal room | `find_contract_signing_time`, `find_auspicious_triangulation` | Not legal advice |
 | 58 | Naming ceremony and family rites | `get_election_catalog`, `find_election_window`, `get_panchang` | None |
 
 `rank_candidate_dates` is the right call for a real scheduling conversation. The user names the 2 to
@@ -208,7 +208,7 @@ Western astrology APIs do not have at all.
 | # | Product | Tool chain | Constraint |
 |---|---|---|---|
 | 67 | Matter-intake triage | `analyze_natal_promise`, `get_legal_analysis`, `get_litigation_timeline` | **Not legal advice.** Internal lens, never shown to a client as an outcome |
-| 68 | Filing-date selection | `find_election_window`, `get_muhurta_advanced`, `rank_candidate_dates` | Procedural deadlines always win. Never delay a limitation date |
+| 68 | Filing-date selection | `find_election_window`, `find_auspicious_triangulation`, `rank_candidate_dates` | Procedural deadlines always win. Never delay a limitation date |
 | 69 | Detention and bail window tracking | `get_legal_analysis`, `get_litigation_timeline`, `get_event_dasha` | Advocate-facing only |
 | 70 | Matter trend tracking, no client data | `get_horary_serial`, `get_rp_consensus` | Not advice, not evidence |
 
@@ -220,7 +220,7 @@ Western astrology APIs do not have at all.
 | 72 | Celebrity chart explainers | `get_full_chart`, `analyze_natal_promise`, `get_career_signature`, `get_multi_system_verdict` | Public figures only, no health or private claims |
 | 73 | "This week in the sky" newsletter | `get_ephemeris`, `get_transit_crossings` (paged), `get_sublord_changes`, `get_eclipse_impact` | None |
 | 74 | Film and content release desk | `find_election_window`, `get_mundane_ingress`, `rank_candidate_dates` | None |
-| 75 | Interactive "ask the sky" web toy | `get_horary_chart_v2`, `get_horary_advanced`, `get_lost_or_missing` | Entertainment framing |
+| 75 | Interactive "ask the sky" web toy | `get_horary_chart_v2`, `get_horary_validation_panel`, `get_lost_or_missing` | Entertainment framing |
 
 Four schools that disagree (`get_multi_system_verdict`) make a more interesting and more honest
 format than one confident verdict.
@@ -244,7 +244,7 @@ rests on one fact: a small shift in birth time can change a verdict.
 |---|---|---|---|
 | 81 | Calendar plugin that suggests when to do things | `get_election_catalog`, `find_meeting_time`, `find_contract_signing_time`, `rank_candidate_dates` | None |
 | 82 | Focus and deep-work hour planner | `get_hora_today`, `get_choghadiya_today`, `get_moon_transit`, `get_sublord_changes` | None, and zero PII |
-| 83 | Do-not-start band for a project tool | `get_chidra_dasha`, `get_retrograde_advanced`, `get_transit_crossings` | Advisory |
+| 83 | Do-not-start band for a project tool | `get_chidra_dasha`, `get_retrograde_panel`, `get_transit_crossings` | Advisory |
 | 84 | Team meeting scheduler across charts | `find_meeting_time`, `find_joint_election_window` | Voluntary. Label the joint mode |
 
 ## Q. Local and regional services
@@ -262,9 +262,9 @@ offset makes every call a day early east of Greenwich. Most implementations miss
 
 | # | Product | Tool chain | Constraint |
 |---|---|---|---|
-| 88 | Reproducibility study on horary practice | `get_horary_serial`, `get_rp_consensus`, `get_horary_advanced` | Publish the disagreement honestly |
+| 88 | Reproducibility study on horary practice | `get_horary_serial`, `get_rp_consensus`, `get_horary_validation_panel` | Publish the disagreement honestly |
 | 89 | Cross-school divergence dataset | `analyze_natal_promise`, `get_kcil_verdict`, `get_four_step_verdict`, `get_bosmia_significators`, `get_multi_system_verdict`, `get_event_probability` | Consented or synthetic charts only |
-| 90 | Birth-time sensitivity analysis | `get_twin_differentiation`, `get_twin_divergence_score`, `get_boundary_warnings`, `get_subsub_boundary`, `get_csl_advanced` | None |
+| 90 | Birth-time sensitivity analysis | `get_twin_differentiation`, `get_twin_divergence_score`, `get_boundary_warnings`, `get_subsub_boundary`, `get_csl_panel` | None |
 | 91 | Historical mundane backtesting | `get_mundane_analysis`, `get_mundane_ingress`, `get_ephemeris`, `get_eclipse_impact` | **Historical lens only.** Never a confirmed prediction of disasters or epidemics |
 
 ## S. Consumer apps

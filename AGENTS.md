@@ -87,7 +87,7 @@ Details that cost time when they are wrong:
 
   Never let the model type a birth offset. It often types today's offset, and 30 minutes moves the
   Ascendant about 7 degrees. Some fields still take a number:
-  - the nested `person2` and `partner` charts, and both people in `get_compatibility_advanced`
+  - the nested `person2` and `partner` charts, and both people in `get_compatibility_panel`
   - the event offset on the electional tools
   - the day-frame tools, such as `get_choghadiya_today`
 
