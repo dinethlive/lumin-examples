@@ -436,7 +436,7 @@ export function ConstraintsForm({ event, onElectResult, onRankResult, onBack }: 
       {loading && (
         <p className="text-center text-sm text-muted-foreground">
           {mode === "elect"
-            ? "Up to five tool calls against the live engine, usually 20 to 70 seconds."
+            ? "Five or more tool calls against the live engine, usually 20 to 90 seconds."
             : "Two tool calls against the live engine, usually 15 to 45 seconds."}
         </p>
       )}

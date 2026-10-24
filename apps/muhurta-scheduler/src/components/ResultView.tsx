@@ -123,9 +123,22 @@ export function ResultView({ data, onRestart, onNewConstraints }: Props) {
                   {m.isFullTriangulation ? "Full triangulation" : "Workable, not full agreement"}
                   {" "}&middot; {m.durationMinutes} min
                 </p>
+                {m.lagnaFullAgreement && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Ascendant sign, star and sub lords all signify the event
+                  </p>
+                )}
               </div>
             ))}
           </div>
+          {data.crossCheck.moments.length > 4 && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Showing the first 4 of {data.crossCheck.moments.length} moments returned, in the tool&apos;s
+              own order.
+              {data.crossCheck.momentsFound > data.crossCheck.moments.length &&
+                ` The scan found ${data.crossCheck.momentsFound} in all.`}
+            </p>
+          )}
         </section>
       )}
 
