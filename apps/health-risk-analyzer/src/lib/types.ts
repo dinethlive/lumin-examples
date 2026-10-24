@@ -133,12 +133,53 @@ export type SaturnCycle = {
   peak_theme?: string | null;
 };
 
+// From get_chronic_recovery: the 6th CSL's star lord read for the 11th
+// (recovery) against the 8th (chronic). The outcome is the tool's own word.
+export type RecoveryOutcome = "RECOVERY" | "CHRONIC" | "UNCERTAIN";
+
+export type RecoveryOutlook = {
+  outcome: RecoveryOutcome;
+  sixth_csl: string;
+  star_lord: string;
+  summary: string;
+};
+
+// From get_surgery_dasha_periods: whether the 1st, 6th and 8th CSLs promise
+// surgery at all. The windows themselves go in surgery_windows.
+export type SurgeryPromise = {
+  is_promised: boolean;
+  verdict: string;
+  summary: string;
+};
+
+// From get_paradigm_panel: one matter read through every system side by side.
+// The tool returns no score, average or vote, so neither does this shape.
+export type ParadigmReading = {
+  system: string;
+  school: string;
+  /** PROMISED, MIXED, DENIED, INCONCLUSIVE, NO_VERDICT_PROCEDURE or SILENT. */
+  verdict: string;
+  /** The system's own verdict word, when it has one. */
+  stated_as: string | null;
+  note: string;
+};
+
+export type ParadigmPanel = {
+  /** disagreement.type, for example SPLIT_VERDICT or CONCORDANT. */
+  disagreement_type: string;
+  detail: string;
+  readings: ParadigmReading[];
+};
+
 export type AnalysisResponse = {
   resolved_location: ModelLocation;
   vitality_index: VitalityIndex;
   chart_confidence: ChartConfidence;
   constitutional_basis: ConstitutionalBasis;
   chronicity_profile: ChronicityProfile;
+  recovery_outlook: RecoveryOutlook;
+  surgery_promise: SurgeryPromise;
+  paradigm_panel: ParadigmPanel;
   system_risks: SystemRisk[];
   organ_panel: OrganPanel;
   saturn_cycle: SaturnCycle;

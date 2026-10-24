@@ -1,6 +1,8 @@
 import type {
   ChronicityProfile,
+  RecoveryOutlook,
   SaturnCycle,
+  SurgeryPromise,
   ScreeningEntry,
   TimingWindow,
 } from "@/lib/types";
@@ -16,6 +18,27 @@ const TENDENCY_COLOR: Record<ChronicityProfile["tendency"], string> = {
   acute: "var(--color-risk-elevated)",
   chronic: "var(--color-risk-moderate)",
   mixed: "var(--color-vitality-balanced)",
+};
+
+const RECOVERY_TONE: Record<
+  RecoveryOutlook["outcome"],
+  { color: string; soft: string; label: string }
+> = {
+  RECOVERY: {
+    color: "var(--color-risk-low)",
+    soft: "var(--color-risk-low-soft)",
+    label: "Leans to recovery",
+  },
+  CHRONIC: {
+    color: "var(--color-risk-elevated)",
+    soft: "var(--color-risk-elevated-soft)",
+    label: "Leans to persistence",
+  },
+  UNCERTAIN: {
+    color: "var(--color-risk-moderate)",
+    soft: "var(--color-risk-moderate-soft)",
+    label: "Not settled by this rule",
+  },
 };
 
 const SATURN_TONE: Record<
@@ -41,12 +64,16 @@ const SATURN_TONE: Record<
 
 export function TimelineCard({
   chronicity,
+  recoveryOutlook,
+  surgeryPromise,
   saturn,
   surgery,
   recovery,
   screening,
 }: {
   chronicity: ChronicityProfile;
+  recoveryOutlook: RecoveryOutlook;
+  surgeryPromise: SurgeryPromise;
   saturn: SaturnCycle;
   surgery: TimingWindow[];
   recovery: TimingWindow[];
@@ -69,9 +96,25 @@ export function TimelineCard({
           {chronicity.reasoning}
         </p>
 
+        <RecoverySection outlook={recoveryOutlook} />
+
         <SaturnSection saturn={saturn} />
 
-        <Section title="Surgery windows" empty="No active surgical windows in horizon.">
+        <Section
+          title="Surgery windows"
+          empty="No active surgical windows in horizon."
+          lead={
+            <p className="mt-2 text-xs leading-relaxed text-foreground/80">
+              <span className="font-medium text-foreground">
+                {surgeryPromise.is_promised ? "Surgery is promised" : "Surgery is not promised"}
+              </span>{" "}
+              <span className="font-mono text-[11px] text-muted-foreground">
+                ({surgeryPromise.verdict})
+              </span>
+              . {surgeryPromise.summary}
+            </p>
+          }
+        >
           {surgery.map((w, i) => (
             <WindowRow key={i} window={w} accent="var(--color-risk-elevated)" />
           ))}
@@ -141,6 +184,32 @@ export function TimelineCard({
         </ul>
       </div>
     </div>
+  );
+}
+
+function RecoverySection({ outlook }: { outlook: RecoveryOutlook }) {
+  const tone = RECOVERY_TONE[outlook.outcome];
+  return (
+    <section className="mt-5 border-t border-black/[0.06] pt-5">
+      <p className="text-[10px] font-medium tracking-[0.16em] uppercase text-muted-foreground">
+        Recovery or persistence
+      </p>
+      <div className="mt-3 rounded-lg px-3 py-2.5" style={{ background: tone.soft }}>
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className="inline-flex items-center gap-1.5 text-sm font-medium"
+            style={{ color: tone.color }}
+          >
+            <span className="size-1.5 rounded-full" style={{ background: tone.color }} />
+            {tone.label}
+          </span>
+          <span className="font-mono text-[12px] text-foreground">
+            6th CSL {outlook.sixth_csl}, star lord {outlook.star_lord}
+          </span>
+        </div>
+        <p className="mt-1.5 text-xs leading-relaxed text-foreground/80">{outlook.summary}</p>
+      </div>
+    </section>
   );
 }
 
@@ -225,10 +294,13 @@ function SaturnSection({ saturn }: { saturn: SaturnCycle }) {
 function Section({
   title,
   empty,
+  lead,
   children,
 }: {
   title: string;
   empty: string;
+  /** Shown above the rows whether or not there are any. */
+  lead?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const arr = Array.isArray(children) ? children : [children];
@@ -238,6 +310,7 @@ function Section({
       <p className="text-[10px] font-medium tracking-[0.16em] uppercase text-muted-foreground">
         {title}
       </p>
+      {lead}
       {hasContent ? (
         <div className="mt-3 space-y-2">{children}</div>
       ) : (

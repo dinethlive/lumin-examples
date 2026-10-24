@@ -13,7 +13,7 @@ the systems, or re-skin it for your brand.
 
 ## What it wires
 
-The protocol has 7 steps and makes up to 31 tool calls.
+The protocol has 7 steps. The table is the allowlist, `ALLOWED_TOOLS` in `src/lib/prompt.ts`.
 
 | Tool | What it contributes | System |
 |---|---|---|
@@ -26,15 +26,15 @@ The protocol has 7 steps and makes up to 31 tool calls.
 | `run_pre_verdict_audit` | Chart-integrity gate. Checks boundary, combustion, planetary war and vargottama in one pass. Feeds `chart_confidence` | KP |
 | `analyze_natal_promise` | Verdict for health, longevity and chronic-disease life events. **Paged.** | KP |
 | `get_significators` | The 4-level house-signification matrix behind every "signifies 6/8/12" claim | KP |
-| `get_multi_system_verdict` | 4-school consensus (KP CSL, KCIL, 4-Step, Bosmia) for Chronic Illness and Surgery | KP-extended |
+| `get_paradigm_panel` | Chronic illness read by KP, KCIL, Four Step, Bosmia, Parashari, Jaimini and Tajik side by side, with how they relate (`disagreement.type`). No score, no vote. Rendered as the "Across schools" card | Cross-system |
 | `get_bhadhakasthana` | The blockage house, driven by the mobility of the lagna | KP |
-| `get_csl_advanced` | Deep CSL chain for cusps 1, 6, 8, 12 | KP |
+| `get_csl_condition` | Condition of the twelve cuspal sub lords (extent, combust star, retrograde delay), read for cusps 1, 6, 8, 11, 12. Reported, gates nothing | KP |
 | `get_smart_current_dasha` | Current Mahadasha, Antardasha, Pratyantardasha | KP |
 | `get_dasha_periods` | Full Vimshottari for the next 25 years | KP |
-| `get_ruling_planets` | The KP timing-verification set (ascendant and Moon sign/star/sub lord, day lord) | KP |
-| `get_fruitful_significators` | Significator matrix intersected with ruling planets, per event. Only these significators can deliver the event | KP |
+| `get_fruitful_significators` | Significator matrix intersected with the Ruling Planets of the moment of judgement, per event. Only these significators can deliver the event | KP |
 | `get_transit_timing_hierarchy` | Saturn-to-Moon transit cascade. Opens a window only where the star and sub lord of a fruitful significator align | KP |
-| `get_medical_timing` | Surgery windows, recovery versus chronic differentiation | KP |
+| `get_surgery_dasha_periods` | Whether the 1st, 6th and 8th CSLs promise surgery, and the dasha periods it falls due in. **Paged.** Feeds the surgery promise line and the surgery windows | KP |
+| `get_chronic_recovery` | Recovery or persistence, from the 6th CSL's star lord (11th against 8th). Rendered as the "Recovery or persistence" block | KP |
 | `get_ashtakavarga` | Bindus on houses 1, 6, 8 for longevity strength | Vedic Parashari, cross-system reference |
 | `get_chronic_disease_panel` | 8-condition watch-decade panel. **Paged.** | KP |
 | `get_health_organ_panel` | Sign-to-body-region affliction map, the engine-backed Kaalpurusha panel | Vedic Parashari, cross-system reference |
@@ -43,12 +43,13 @@ The protocol has 7 steps and makes up to 31 tool calls.
 | `get_sade_sati_phases` | Saturn's 7.5-year transit cycle. **Paged.** | KP |
 | `get_sade_sati_intensity` | Intensity peaks within the Sade Sati phase, resolved by sub lord | KP |
 | `get_ayurvedic_constitution` | Vata/Pitta/Kapha triple. Feeds a one-line prakriti note | Vedic Parashari, cross-system reference |
-| `get_oncology_timing` | Conditional. Body-part risk and recurrence versus cure, called only when the intake or chart points there | KP |
+| `get_malignancy_signatures` | Conditional. Six named planet-pair signatures, called only when the chart shows a Saturn-Rahu or Jupiter-Rahu cluster on 6/8/12. Supplementary indicator only | KP |
 | `get_d6_chart` | Shashtamsa, the classical companion to the chronic-disease panel | Vedic Parashari, cross-system reference |
 | `get_d8_chart` | Ashtamsa, the companion to the lifespan band | Vedic Parashari, cross-system reference |
 | `get_d30_chart` | Trimsamsa. Corroborates the nervous-mental score | Vedic Parashari, cross-system reference |
 
-Nine of the 31 tools are not orthodox KP. Eight are Vedic Parashari, and one is KP-extended. The
+Nine of the tools are not orthodox KP. Eight are Vedic Parashari, and one, `get_paradigm_panel`,
+is cross-system. The
 system prompt tags each of them inline. It tells the model to attribute any finding from them to
 its own system, never as a KP verdict. In the classical texts, health astrology draws heavily on
 Parashari technique. So these tools are close to a third of the app's own tool set, not an edge
@@ -65,13 +66,30 @@ The tool gated the `peak_window` claims of a health app. That made it a correctn
 labelling nit. So the build replaced the tool instead of relabelling it. The timing trigger is now
 the orthodox KP transit chain, where each step feeds the next:
 
-1. `get_ruling_planets` returns the timing-verification set.
-2. `get_fruitful_significators` intersects the significator matrix with the ruling planets, per
-   event.
-3. `get_transit_timing_hierarchy` runs the Saturn-to-Moon cascade. It opens a window only where the
+1. `get_fruitful_significators` intersects the significator matrix with the Ruling Planets of the
+   moment of judgement (default now), per event, and reports that set in `judgement`.
+2. `get_transit_timing_hierarchy` runs the Saturn-to-Moon cascade. It opens a window only where the
    star and sub lord of a fruitful significator line up.
 
-The chain makes three tool calls in place of one, so the app's tool count moved from 29 to 31.
+An earlier version also called `get_ruling_planets`. Through this server that tool gives the
+birth-moment set, which KP uses to rectify a birth time, not to time an event, and the fruitful
+step already reads the judgement-moment set itself. So it was dropped.
+
+## Step tools in place of bundles (2026-10-24)
+
+Lumin split its bundled tools into step tools that each return one whole calculation. The app
+now calls the step it reads, so the call count did not grow:
+
+- `get_medical_timing` became `get_surgery_dasha_periods` and `get_chronic_recovery`. Each now has
+  its own place on screen: the surgery promise line and the recovery block.
+- `get_oncology_timing` became `get_malignancy_signatures`, the one block the profile used. Its
+  window lists overlap the surgery and dasha tools, and its body-part map overlaps the organ panel.
+- `get_csl_advanced` (renamed `get_csl_panel`, a KP-extended bundle of four blocks) became
+  `get_csl_condition`, the KP condition of each cuspal sub lord.
+- `get_multi_system_verdict` became `get_paradigm_panel`. The old tool averaged four KP-lineage
+  schools into a consensus band, one call per event. The panel reads seven systems in one call,
+  keeps each system's own verdict, names how they relate, and returns no score. When the schools
+  split, the card shows the split.
 
 The other option was to relabel `get_vedha_transit` as a cross-system reference and keep it as a
 secondary signal. The build set that option aside. The app called the tool its *mandatory* trigger,
@@ -79,22 +97,19 @@ and a discredited rule should not gate a claim, however clearly someone labels i
 
 ## What it costs
 
-| Path | Calls per analysis |
-|---|---|
-| As shipped, all 31 tools, no oncology branch | **30** |
-| As shipped, oncology branch triggered | **31** |
-| Minimum useful profile (`get_full_chart`, `analyze_natal_promise`, `get_chronic_disease_panel`) | 3, plus 1 per extra page |
-
-The free plan is 300 tool calls a month per account. All keys on an account share it. So the
-shipped path runs about 9 to 10 analyses a month on the free plan. After that, calls draw on the
-pack balance. This app is the heaviest in the set by design. A clinical-adjacent read earns the
+Each analysis makes one call per allowlisted tool, plus one per extra page and one per repeated
+event (`get_fruitful_significators` and `get_transit_timing_hierarchy` run for Chronic Illness and
+Surgery). The conditional `get_malignancy_signatures` runs only on the chart pattern it needs. The
+route's `logRun` line prints the real count for each run. The free plan's monthly allowance is
+shared by every key on an account, and after it calls draw on the pack balance. This app is the
+heaviest in the set by design. A clinical-adjacent read earns the
 depth that a floor of 20 or more calls buys.
 
 ## Paging is a correctness requirement here, not an optimization
 
-`analyze_natal_promise`, `get_chronic_disease_panel` and `get_sade_sati_phases` all return paged
-results. The protocol asks about some rows by name: chronic illness, mental health, accident and
-hospitalization. These rows can sit on page 2, 3 or 4. After every call to these three tools, the
+`analyze_natal_promise`, `get_chronic_disease_panel`, `get_sade_sati_phases` and
+`get_surgery_dasha_periods` all return paged results. The protocol asks about some rows by name: chronic illness, mental health, accident and
+hospitalization. These rows can sit on page 2, 3 or 4. After every call to these tools, the
 prompt tells the model to:
 
 - read `pagination.totalItems` and `pageNote`.
@@ -129,8 +144,9 @@ time". When they do:
 - the prompt skips ascendant-derived analysis (1st cusp CSL, Lagna-lord vitality).
 - the prompt relies on planetary placements, nakshatra and dasha. The dasha is Moon-driven, so it
   works without an exact time.
-- `get_significators`, `get_multi_system_verdict`, `get_fruitful_significators` and
-  `get_transit_timing_hierarchy` become approximate, because they depend on the cusps.
+- `get_significators`, `get_paradigm_panel`, `get_csl_condition`, `get_chronic_recovery`,
+  `get_surgery_dasha_periods`, `get_fruitful_significators` and `get_transit_timing_hierarchy`
+  become approximate, because they depend on the cusps.
 - `get_sade_sati_intensity` stays reliable, because Lumin computes it from the natal Moon.
 - the vitality index loses about 15 points of confidence, and the constitutional notes say so.
 
