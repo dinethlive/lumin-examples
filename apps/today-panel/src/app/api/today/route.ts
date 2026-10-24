@@ -46,12 +46,32 @@ function validateInput(body: unknown): ResolvedPlaceInput | string {
   const offset = offsetMinutesAt(b.timeZone, noonOf(b.date));
   if (offset === null) return "the UTC offset for that date could not be read from timeZone";
 
+  const now = localWallClock(b.timeZone, new Date());
+  const rpMomentIsNow = now.slice(0, 10) === b.date;
+
   return {
     city: b.city.trim().slice(0, 120),
     date: b.date,
     timeZone: b.timeZone,
     utcOffsetMinutes: Math.round(offset),
+    rpMomentLocal: rpMomentIsNow ? now : noonOf(b.date),
+    rpMomentIsNow,
   };
+}
+
+/** The wall clock in timeZone at an instant, "YYYY-MM-DDTHH:MM:00", minute precision. */
+function localWallClock(timeZone: string, at: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(at);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:00`;
 }
 
 /** Noon on the date. A daylight saving change happens in the small hours, so noon is clear of it. */
@@ -121,6 +141,17 @@ function validateShape(data: TodayModelResponse): string | null {
   if (!data.moon || typeof data.moon.subLord !== "string") {
     return "response is missing the moon position";
   }
+  if (
+    !data.rulingPlanets ||
+    typeof data.rulingPlanets.weekdayLord !== "string" ||
+    !Array.isArray(data.rulingPlanets.ranked) ||
+    data.rulingPlanets.ranked.length === 0
+  ) {
+    return "response is missing the ruling planets";
+  }
+  if (!Array.isArray(data.rulingPlanets.changesAtHoldsUntil)) {
+    data.rulingPlanets.changesAtHoldsUntil = [];
+  }
   if (typeof data.disclaimer !== "string" || !data.disclaimer.trim()) {
     return "response is missing the disclaimer";
   }
@@ -143,7 +174,7 @@ export async function POST(req: NextRequest) {
       allowedTools: ALLOWED_TOOLS,
       system: buildSystemPrompt(),
       user: buildUserPrompt(input),
-      // Five tool calls plus a 16-period and 24-hour payload. Comfortable, and
+      // Six tool calls plus a 16-period and 24-hour payload. Comfortable, and
       // it costs nothing when the answer is shorter, because we stream.
       maxTokens: 16000,
       // This is a lookup, not an investigation. High is enough and it is faster.
@@ -157,7 +188,15 @@ export async function POST(req: NextRequest) {
       parseJsonBlock<TodayModelResponse>(result.text),
       validateShape,
     );
-    const response: TodayResponse = { ...data, place: placeFor(data.place, input) };
+    const response: TodayResponse = {
+      ...data,
+      place: placeFor(data.place, input),
+      rulingPlanets: {
+        ...data.rulingPlanets,
+        momentLocal: input.rpMomentLocal,
+        momentIsNow: input.rpMomentIsNow,
+      },
+    };
     return NextResponse.json(response);
   } catch (err) {
     if (err instanceof LuminClientError) {

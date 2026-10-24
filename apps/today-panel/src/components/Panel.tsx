@@ -174,6 +174,47 @@ export function Panel({ data }: { data: TodayResponse }) {
       </div>
 
       <Card
+        title="Ruling planets"
+        subtitle={
+          data.rulingPlanets.momentIsNow === false
+            ? "Krishnamurti Paddhati. The planets ruling noon at this place on this date"
+            : "Krishnamurti Paddhati. The planets ruling this moment at this place"
+        }
+      >
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-5">
+          {[
+            ["Day lord", data.rulingPlanets.weekdayLord],
+            ["Moon sign lord", data.rulingPlanets.moonSignLord],
+            ["Moon star lord", data.rulingPlanets.moonStarLord],
+            ["Ascendant sign lord", data.rulingPlanets.ascSignLord],
+            ["Ascendant star lord", data.rulingPlanets.ascStarLord],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-xs text-black/50">{label}</dt>
+              <dd className="font-medium">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-4 text-sm">
+          <span className="text-black/60">Ranked set: </span>
+          <span className="font-medium">{data.rulingPlanets.ranked.join(", ")}</span>
+          {data.rulingPlanets.nodeRule && (
+            <span className="text-black/50"> (node rule: {data.rulingPlanets.nodeRule})</span>
+          )}
+        </p>
+        {data.rulingPlanets.holdsUntilUTC && (
+          <p className="mt-1 text-sm text-black/60">
+            This set holds until {localTime(data.rulingPlanets.holdsUntilUTC, offset)}
+            {data.rulingPlanets.changesAtHoldsUntil.length > 0 &&
+              `, when ${data.rulingPlanets.changesAtHoldsUntil
+                .map((c) => `${c.member} moves from ${c.from} to ${c.to}`)
+                .join(", ")}`}
+            .
+          </p>
+        )}
+      </Card>
+
+      <Card
         title="Choghadiya"
         subtitle="Vedic muhurta, not Krishnamurti Paddhati. Eight day and eight night periods"
       >
