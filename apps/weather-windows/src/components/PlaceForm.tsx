@@ -86,7 +86,7 @@ export function PlaceForm({ onResult, onLoadingChange, onError, loading }: Props
 
     // Matched to the route's maxDuration, so a hung request cannot spin forever.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    const timeout = setTimeout(() => controller.abort(), 300_000);
 
     try {
       const res = await fetch("/api/forecast", {

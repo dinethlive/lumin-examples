@@ -5,11 +5,19 @@ import { formatUtcOffset } from "@lumin-examples/client/zone";
 import { Hero } from "@/components/Hero";
 import { PlaceForm } from "@/components/PlaceForm";
 import { SeasonBanner } from "@/components/SeasonBanner";
-import { WindowCard } from "@/components/WindowCard";
+import {
+  ChannelRow,
+  CslBlock,
+  DISPOSITION_META,
+  SystemChip,
+  WindowCard,
+  bandLabel,
+  formatDay,
+} from "@/components/WindowCard";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import type {
-  Channel,
   CurrentConditions as CurrentConditionsType,
+  Disposition,
   ForecastResponse,
   MonsoonOutlook,
 } from "@/lib/types";
@@ -49,11 +57,11 @@ export default function Page() {
 }
 
 const LOADING_STEPS = [
-  "Resolving the place to coordinates and timezone",
-  "Casting the cardinal ingress charts for the season",
+  "Resolving the place to coordinates and time zone",
+  "Reading the 4th-cusp verdict on the season's ingress chart",
   "Casting a chart for each new and full moon in range",
-  "Scoring temperature, precipitation, and wind channels",
-  "Reading the 4th-cusp sub-lord verdict per window",
+  "Reading the channels, the 4th-cusp verdict and the Sapta Nadi per window",
+  "Reading the present moment, and the monsoon chart where it applies",
 ];
 
 function LoadingState() {
@@ -69,10 +77,8 @@ function LoadingState() {
           Reading the sky
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Computing the KP-extended astrometeorology signature through Lumin&rsquo;s engine. This
-          typically takes 40 to 90 seconds: the seasonal-outlook, weather-windows,
-          current-snapshot, and (for monsoon regions) monsoon-onset tools, then scoring each
-          lunation window.
+          Computing the astrometeorology signature through Lumin&rsquo;s engine. Each window is
+          read on its own, so a month takes one to two minutes and a wide range takes longer.
         </p>
         <ul className="mt-5 space-y-1.5 text-sm text-muted-foreground">
           {LOADING_STEPS.map((step, i) => (
@@ -92,7 +98,7 @@ function ResultsSection({ result }: { result: ForecastResponse }) {
     <section className="mx-auto max-w-6xl px-6 pb-24">
       <ResolvedLocationCaption result={result} />
 
-      <SeasonBanner season={result.season} bestWindow={result.best_window} />
+      <SeasonBanner season={result.season} windows={result.windows} />
 
       {(result.current || result.monsoon) && (
         <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -106,8 +112,9 @@ function ResultsSection({ result }: { result: ForecastResponse }) {
           Weather windows
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Each window spans roughly 14 days, cast from the new or full moon that opens
-          it. Read it for the lean, not the exact day.
+          Each window spans roughly 14 days, cast from the new or full moon that opens it. Read it
+          for the lean, not the exact day. Scores are the engine&rsquo;s raw numbers: temperature
+          and precipitation run negative for cold or dry, wind and storm count up from zero.
         </p>
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -117,7 +124,11 @@ function ResultsSection({ result }: { result: ForecastResponse }) {
         </div>
       </div>
 
-      <DisclaimerBanner text={result.disclaimer} />
+      <DisclaimerBanner
+        text={result.disclaimer}
+        toolText={result.tool_disclaimer}
+        saptaNadiText={result.sapta_nadi_disclaimer}
+      />
     </section>
   );
 }
@@ -159,45 +170,16 @@ function ResolvedLocationCaption({ result }: { result: ForecastResponse }) {
   );
 }
 
-const MINI_CHANNEL: Record<
-  "temperature" | "precipitation" | "wind",
-  { label: string; color: string }
-> = {
-  temperature: { label: "Temperature", color: "var(--color-temp)" },
-  precipitation: { label: "Precipitation", color: "var(--color-precip)" },
-  wind: { label: "Wind & storm", color: "var(--color-wind)" },
-};
-
-function MiniChannel({
-  id,
-  channel,
-}: {
-  id: keyof typeof MINI_CHANNEL;
-  channel: Channel;
-}) {
-  const meta = MINI_CHANNEL[id];
-  const score = Math.max(0, Math.min(100, channel.score));
+function DispositionChip({ disposition }: { disposition: Disposition }) {
+  const meta = DISPOSITION_META[disposition];
   return (
-    <div>
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-[11px] font-medium tracking-[0.1em] uppercase text-muted-foreground">
-          <span className="size-1.5 rounded-full" style={{ background: meta.color }} />
-          {meta.label}
-        </span>
-        <span
-          className="text-[13px] font-medium capitalize"
-          style={{ color: meta.color }}
-        >
-          {channel.band}
-        </span>
-      </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/[0.07]">
-        <div
-          className="h-full rounded-full transition-[width] duration-1000 ease-out"
-          style={{ width: `${score}%`, background: meta.color }}
-        />
-      </div>
-    </div>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-wide uppercase ring-1 ring-black/[0.05]"
+      style={{ background: meta.soft, color: meta.color }}
+    >
+      <span className="size-1.5 rounded-full" style={{ background: meta.color }} />
+      {meta.label}
+    </span>
   );
 }
 
@@ -208,47 +190,60 @@ function CurrentConditions({ current }: { current: CurrentConditionsType }) {
         <p className="text-xs font-medium tracking-[0.18em] uppercase text-muted-foreground">
           As of today
         </p>
-        <span className="font-mono text-[11px] text-muted-foreground">
-          {current.datetime}
+        <span className="flex items-center gap-2">
+          <DispositionChip disposition={current.disposition} />
+          <span className="font-mono text-[11px] text-muted-foreground">{current.datetime}</span>
         </span>
       </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <MiniChannel id="temperature" channel={current.temperature} />
-        <MiniChannel id="precipitation" channel={current.precipitation} />
-        <MiniChannel id="wind" channel={current.wind} />
+      <div className="mt-4 space-y-3">
+        <ChannelRow id="temperature" channel={current.temperature} />
+        <ChannelRow id="precipitation" channel={current.precipitation} />
+        <ChannelRow id="wind" channel={current.wind} />
       </div>
-      <p className="mt-4 text-[13px] leading-relaxed text-foreground/85">
-        {current.summary}
-      </p>
+      <p className="mt-4 text-[13px] leading-relaxed text-foreground/85">{current.summary}</p>
+      <div className="mt-4">
+        <CslBlock csl={current.csl} />
+      </div>
     </div>
   );
 }
 
 function MonsoonNote({ monsoon }: { monsoon: MonsoonOutlook }) {
-  const score = Math.max(0, Math.min(100, monsoon.precipitation.score));
   return (
     <div className="fade-up rounded-2xl bg-card p-6 ring-1 ring-black/[0.06]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-medium tracking-[0.18em] uppercase text-muted-foreground">
-          Monsoon onset · {monsoon.year}
+          Monsoon chart · {monsoon.year}
         </p>
-        <span
-          className="font-mono text-[12px] capitalize"
-          style={{ color: "var(--color-precip)" }}
-        >
-          {monsoon.precipitation.band}
+        <span className="flex items-center gap-2">
+          <SystemChip>Ardra Pravesha, classical</SystemChip>
+          <DispositionChip disposition={monsoon.disposition} />
         </span>
       </div>
-      <p className="mt-3 text-sm font-medium text-foreground">{monsoon.onset}</p>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-black/[0.07]">
-        <div
-          className="h-full rounded-full transition-[width] duration-1000 ease-out"
-          style={{ width: `${score}%`, background: "var(--color-precip)" }}
-        />
-      </div>
-      <p className="mt-3 text-[13px] leading-relaxed text-foreground/85">
-        {monsoon.summary}
+      <p className="mt-3 text-sm text-foreground">
+        The Sun enters Ardra on {formatDay(monsoon.ingress_date)}, a {monsoon.ingress_sect}{" "}
+        ingress with {monsoon.ascendant_sign} rising.
       </p>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div>
+          <p className="text-[11px] font-medium tracking-[0.1em] uppercase text-muted-foreground">
+            Onset chart rainfall favourability
+          </p>
+          <p
+            className="mt-1 text-[13px] font-medium capitalize"
+            style={{ color: "var(--color-precip)" }}
+          >
+            {bandLabel(monsoon.rainfall_favourability)}
+          </p>
+        </div>
+        <ChannelRow id="precipitation" channel={monsoon.precipitation} />
+      </div>
+
+      <p className="mt-4 text-[13px] leading-relaxed text-foreground/85">{monsoon.summary}</p>
+      <div className="mt-4">
+        <CslBlock csl={monsoon.csl} />
+      </div>
     </div>
   );
 }
