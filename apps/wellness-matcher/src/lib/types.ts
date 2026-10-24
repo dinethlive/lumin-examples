@@ -39,8 +39,9 @@ export type DoshaBalance = {
   kapha: number;
 };
 
-// A planet that shapes the constitution, paired with its get_shadbala strength.
-// A dosha-carrying planet that is also strong by Shadbala is a high-confidence
+// A planet that shapes the constitution, paired with its get_shadbala_index
+// total (a Lumin 0-100 index, not the BPHS Shadbala). A dosha-carrying planet
+// that is also strong on the index is a high-confidence
 // driver; one that is weak is a softer influence.
 export type ConstitutionDriver = {
   planet: string;
