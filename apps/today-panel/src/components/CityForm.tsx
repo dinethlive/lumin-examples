@@ -10,6 +10,7 @@ const LOADING_STEPS = [
   "Computing sunrise and the five limbs",
   "Dividing the day into bands",
   "Reading the Moon",
+  "Finding the ruling planets",
 ];
 
 type Props = {
@@ -182,7 +183,7 @@ export function CityForm({ onResult }: Props) {
 
       {loading && (
         <p className="text-sm text-black/50">
-          Five tool calls against the live engine, usually 15 to 40 seconds.
+          Six tool calls against the live engine, usually 15 to 45 seconds.
         </p>
       )}
 

@@ -15,6 +15,7 @@ import type {
   AnalysisResponseHydrated,
   BirthInput,
   ConfidenceBand,
+  RecoveryOutcome,
   SaturnCycleStatus,
   SystemId,
   SystemRisk,
@@ -40,6 +41,7 @@ const VALID_SYSTEMS: SystemId[] = [
 
 const CONFIDENCE_BANDS: ConfidenceBand[] = ["high", "moderate", "low"];
 const SATURN_STATUSES: SaturnCycleStatus[] = ["active", "approaching", "clear"];
+const RECOVERY_OUTCOMES: RecoveryOutcome[] = ["RECOVERY", "CHRONIC", "UNCERTAIN"];
 
 function badRequest(message: string) {
   return NextResponse.json({ error: message, failure: "bad_request" }, { status: 400 });
@@ -111,6 +113,26 @@ function validateShape(data: AnalysisResponse): string | null {
   if (!data.saturn_cycle || !SATURN_STATUSES.includes(data.saturn_cycle.status)) {
     return "Response missing or invalid saturn_cycle";
   }
+  if (
+    !data.recovery_outlook ||
+    !RECOVERY_OUTCOMES.includes(data.recovery_outlook.outcome)
+  ) {
+    return "Response missing or invalid recovery_outlook";
+  }
+  if (!data.surgery_promise || typeof data.surgery_promise.is_promised !== "boolean") {
+    return "Response missing surgery_promise";
+  }
+  if (
+    !data.paradigm_panel ||
+    typeof data.paradigm_panel.disagreement_type !== "string" ||
+    !Array.isArray(data.paradigm_panel.readings) ||
+    data.paradigm_panel.readings.length === 0 ||
+    data.paradigm_panel.readings.some(
+      (r) => typeof r.system !== "string" || typeof r.verdict !== "string",
+    )
+  ) {
+    return "Response missing or invalid paradigm_panel";
+  }
   if (!Array.isArray(data.screening_calendar)) {
     return "Response missing screening_calendar";
   }
@@ -169,13 +191,15 @@ export async function POST(req: NextRequest) {
       allowedTools: ALLOWED_TOOLS,
       system: buildSystemPrompt(),
       user: buildUserPrompt(input),
-      // 31 tool calls, three of them paged, feeding an 8-card dashboard.
+      // A deep protocol, four of its tools paged, feeding an 8-card dashboard.
       // MCP tool-use blocks count against this budget alongside the final
       // text, so a deep reading like this one needs real headroom above the
-      // 16000 floor. We stream, so it costs nothing when the answer is
-      // shorter.
-      maxTokens: 24000,
+      // 16000 floor; 24000 cut a live run off on Sonnet 5.5. We stream, so it
+      // costs nothing when the answer is shorter.
+      maxTokens: 128000,
       effort: "xhigh",
+      // Four paged tools can take more than the client's default 12 turns.
+      maxTurns: 20,
       signal: req.signal,
     });
 

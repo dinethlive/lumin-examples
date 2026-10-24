@@ -18,45 +18,62 @@ data and never calls `set_birth_profile`.
 
 | Tool | What it contributes | System |
 |---|---|---|
-| `get_seasonal_outlook` | Four seasonal themes for a year, from the cardinal ingress charts. The season banner uses it. **Paged.** | KP-extended |
-| `get_weather_windows` | Windows of roughly 14 days across a date range, each cast from a lunation chart. The primary tool. **Paged.** | KP-extended |
-| `get_astro_weather` | The signature for the place at the present moment, an "as of today" anchor beside the future windows | KP-extended |
-| `get_monsoon_forecast` | Monsoon onset from the Ardra Pravesha chart. The app calls it only for places in the monsoon belt | KP-extended |
+| `get_weather_csl_fourth` | Step tool, called with `cadence: "seasons"`. The 4th-cusp sub lord verdict on each cardinal ingress chart of the year. The season banner shows the season covering the range: its verdict, sub lord, star lord, signified houses and the reasoning line. **Paged.** | KP-extended |
+| `get_weather_windows` | Windows of roughly 14 days across a date range, each cast from a lunation chart. The primary tool. Each card renders all three blocks of its window, so the app keeps the whole bundle: the three channels, the 4th-cusp verdict and the Sapta Nadi Chakra, plus the engine's disposition. **Paged**, often one window per page. | Mixed, each block tagged |
+| `get_astro_weather` | The signature for the place now, cast for the place's wall clock and the offset in force today. The route reads both from the time zone. | Mixed, each block tagged |
+| `get_monsoon_forecast` | The Ardra Pravesha chart. The app calls it only for places in the monsoon belt. It shows the onset chart's own rainfall favourability beside the precipitation channel, and when the two disagree it shows both. | Classical, with KP-extended and Western layers |
 
-The tool taxonomy tags all four astrometeorology tools as **KP-extended**. That means a later author
-extended KP technique to a moment in time instead of a birth. It is not orthodox Krishnamurti
-Paddhati itself, and KSK's own books have no weather chapter. The system prompt says so first, and
-this README says so too. The copy in this app calls the result an "astrometeorology signature",
-never "the KP forecast".
+The season banner reads one block of the seasonal bundle, so it calls the step tool rather than
+`get_seasonal_outlook`. The window cards read every block, so they keep `get_weather_windows`. The
+other two step tools (`get_sapta_nadi`, `get_weather_rulerships`) would only repeat what the bundle
+already returned.
+
+Each weather result mixes traditions, and the cards say which is which:
+
+- **4th-cusp sub lord verdict**: KP machinery applied to weather by later authors (KP-extended).
+  KSK's own books teach no weather rule.
+- **Channels**: built on Western planet-to-weather rulerships, with the Sapta Nadi result and the
+  4th-cusp verdict folded in. The fired signatures under each channel name every contribution.
+- **Sapta Nadi Chakra**: classical, Tantric in origin. Not KP.
+- **Ardra Pravesha**: classical (Brihat Samhita). Not KP.
+
+The copy calls the result an "astrometeorology signature", never "the KP forecast".
+
+## What the page shows, and what it does not
+
+Every band, score, verdict and disposition is the engine's own. Scores are the raw numbers the
+tool returns, not percentages: temperature and precipitation are signed (negative is cold or dry),
+wind and storm count up from zero. The band meter has the engine's five steps, very low to very
+high. The app ranks nothing and picks no "best" window. The season banner lists the windows whose
+disposition is `SETTLED`, and says so when there are none.
+
+Tool text is relayed word for word. The route changes one thing: each em dash becomes a comma.
 
 ## What it costs
 
 | Path | Calls per forecast |
 |---|---|
-| As shipped, all four tools, non-monsoon place | **3** |
-| As shipped, all four tools, monsoon place in season | **4** |
-| Minimum useful forecast (`get_weather_windows` only) | 1, plus 1 more per extra page |
+| As shipped, non-monsoon place, one-month range | about **4** (1 season, 2 window pages, 1 now) |
+| As shipped, monsoon place, one-month range | about **5** |
+| Each further window | 1 more, because `get_weather_windows` often carries one window per page |
 
-`get_weather_windows` and `get_seasonal_outlook` both return pages. This app allows a range of up to
-220 days. Such a range gives roughly 15 windows and can span more than one page. So a forecast over a
-wide range can cost more than the table shows, because each extra page is one more call.
+This app allows a range of up to 220 days. Such a range gives roughly 15 windows, so about 15 window
+pages. A wide range costs well over the one-month figure and takes several minutes.
 
-The free plan is 300 tool calls a month per account, shared by all of its keys. So the shipped path
-runs about 75 to 100 forecasts a month on the free plan, depending on the width of the range.
+Check the free monthly allowance and the call packs at [lumin.guru/pricing](https://lumin.guru/pricing).
 
 ## Paging is a correctness requirement here, not an optimization
 
 Pages exist so that the model gives each window a real reasoning pass. They do not exist to make the
-response smaller. After every `get_weather_windows` or `get_seasonal_outlook` call, the prompt tells
-the model to do these steps:
+response smaller. After every `get_weather_windows` or `get_weather_csl_fourth` call, the prompt
+tells the model to do these steps:
 
-1. Read `pagination.totalItems` and `pageNote`.
-2. Call again with `page` incremented.
+1. Read `pagination` and `pageNote`.
+2. While `pagination.hasMore` is true, call again with `page` incremented.
 3. Continue until it reads every window in the requested range.
 
-A stop at page 1 on a wide range is silent data loss that looks like a smaller answer. The app would
-report "no unsettled stretch found". The truth would be "no unsettled stretch found on the pages I
-bothered to read".
+A stop at page 1 is silent data loss that looks like a smaller answer. The app would report "no
+settled window found". The truth would be "no settled window found on the pages I bothered to read".
 
 ## Why this is interesting for B2B
 
@@ -98,10 +115,10 @@ bun run --filter weather-windows dev   # http://localhost:3103
 
 ## Make it yours
 
-1. Edit `src/lib/prompt.ts`. Tighten the outdoor-rating rules for your domain. For example, an
-   agritech build cares about precipitation, and an event venue cares about wind and rain together.
-   If your vertical does not need the `current` and `monsoon` blocks, remove them.
-2. Adjust the channel bands in the prompt and `WindowCard` to your domain vocabulary.
+1. Edit `src/lib/prompt.ts`. An agritech build cares about precipitation, and an event venue cares
+   about wind and rain together, so choose which blocks to lead with. If your vertical does not need the `current` and `monsoon` blocks, remove them.
+2. Add your own rule for an outdoor rating on top of the engine's bands and dispositions, and
+   label it as yours on the page, so nobody reads it as the engine's.
 3. Restyle `src/app/globals.css` and `src/components/*` with your colors and typography.
 4. Cache it. Within a lunation window, the signature is stable. On a public page, a daily cache keyed
    on the place and the window makes the tool cost for each visitor close to zero.
@@ -113,7 +130,8 @@ bun run --filter weather-windows dev   # http://localhost:3103
 > data, and local knowledge. Each window describes a tendency, not a guarantee.
 
 The system prompt requires it. The route checks it as a required field when the response arrives.
-`DisclaimerBanner` shows it on every result. Its words make it a lens next to conventional
+`DisclaimerBanner` shows it on every result, followed by the weather tools' own disclaimer and the
+Sapta Nadi block's own disclaimer, both word for word. Its words make it a lens next to conventional
 forecasts, never a replacement for them. A wrong outdoor-safety call from an astrological reading is
 the one failure that this app cannot afford to invite.
 

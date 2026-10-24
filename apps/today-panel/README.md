@@ -20,6 +20,7 @@ is also the easiest to cache, with one result per city per day.
 | `get_hora_today` | Twenty-four planetary hours in Chaldean order from sunrise, plus the one running now | Vedic muhurta adjunct, **not** orthodox KP |
 | `get_moon_transit` | The Moon's sign, star lord, sub lord and the minutes left in the current sub | KP |
 | `get_sublord_changes` | Hours until each planet's sub lord changes next. It takes no location at all | KP |
+| `get_ruling_planets_at_judgement` | The KP Ruling Planets of the moment at the city: day lord, Moon sign and star lords, Ascendant sign and star lords, the ranked set, and the instant the set next changes. The route judges the current minute when the date is today in the chosen zone, and local noon otherwise | KP |
 
 Choghadiya and hora come from Vedic muhurta, not from Krishnamurti Paddhati. The panel shows them
 beside the KP layer, and the card headings say so. Roughly a third of the server's surface is not
@@ -30,11 +31,11 @@ thoroughness.
 
 | Path | Calls per panel |
 |---|---|
-| As shipped, all five tools | **5** |
+| As shipped, all six tools | **6** |
 | Minimum useful panel (`get_panchang` and `get_choghadiya_today` only) | 2 |
 
 The free plan is 300 tool calls a month per account, shared by all of its keys. So this app runs
-about 60 panels a month on the free plan. The result depends only on a city and a date, so it caches
+about 50 panels a month on the free plan. The result depends only on a city and a date, so it caches
 perfectly. One set of calls per city per day serves every visitor.
 
 ## The detail worth copying
@@ -54,9 +55,9 @@ date. Then the panel says that its times are on the wrong clock, and it names th
 
 Two smaller details are worth copying too:
 
-- The schemas of `get_panchang` and `get_moon_transit` use the field names of birth data. But the
-  values carry the **query** moment and place, not a person. So this app holds no personal data,
-  although it calls two tools that look like they need a chart.
+- The schemas of `get_panchang`, `get_moon_transit` and `get_ruling_planets_at_judgement` use the
+  field names of birth data. But the values carry the **query** moment and place, not a person. So
+  this app holds no personal data, although it calls three tools that look like they need a chart.
 - Every timestamp that crosses the API is ISO 8601 UTC. The client converts it once, when it
   renders. If you send local times through the model, off-by-one time zone bugs occur.
 

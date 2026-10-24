@@ -3,11 +3,12 @@
  * and the comment says which one, so a developer forking this knows exactly
  * what to drop when they drop a tool from ALLOWED_TOOLS.
  *
- * Eleven tool calls fill this per match: get_boundary_warnings x2,
- * get_ashta_koota_milan x1, check_compatibility x1, get_compatibility_advanced
- * x1, check_doshas x2, get_kalsarpa_variants x2, get_spouse_characteristics x2.
- * See src/lib/prompt.ts for the exact call plan and why each tool is called
- * once or twice.
+ * Fifteen tool calls fill this per match: get_boundary_warnings x2,
+ * get_ashta_koota_milan x1, check_compatibility x1, get_couple_csl_factors x1,
+ * get_couple_dasha_sync x1, check_doshas x2, get_kalsarpa_variants x2,
+ * get_spouse_characteristics x2, get_punarphoo x1 (both charts in one call),
+ * get_marital_discord_signature x2. See src/lib/prompt.ts for the exact call
+ * plan and why each tool is called once or twice.
  */
 
 export type Gender = "female" | "male" | "other";
@@ -77,6 +78,13 @@ export type AshtaKoota = {
   band: AshtaKootaBand;
   nadiDosha: boolean;
   bhakootDosha: boolean;
+  /**
+   * The tool scores its top-level chart as the groom and the partner as the
+   * bride (groomConvention), and Varna, Tara, Bhakoota and Yoni are
+   * directional. The prompt puts the male partner at the top level, so this
+   * says whose chart was read as the groom.
+   */
+  groom: "personA" | "personB";
   kootas: Koota[];
 };
 
@@ -96,21 +104,61 @@ export type KpSevenFactor = {
   factors: SevenFactor[];
 };
 
-/** get_compatibility_advanced. KP, the rigorous 6-cuspal-sub-lord-factor read. */
+/**
+ * One KP cuspal sub lord factor. The first five rows come from
+ * get_couple_csl_factors (LOVE, MARRIAGE, FINANCE, UNION, DENIAL_ABSENCE), the
+ * sixth from get_couple_dasha_sync's dashaSyncFactor (DASHA_SYNC). Each score
+ * is the engine's own construction (F006), shown as returned, never averaged.
+ */
 export type CuspalFactor = {
+  /** The tool's `factor` label, e.g. "MARRIAGE (7th CSL x 7th CSL -> 2/7/11)". */
   name: string;
+  score: number;
+  /** The tool's verdict word for this factor, e.g. ABSENT, WEAK, MODERATE, STRONG. */
   verdict: string;
-  /** The sub-lord chain the verdict rests on, in plain language. */
-  chain: string;
+  /** Houses Person A's sub lord reaches (person1Coverage). */
+  personACoverage: number[];
+  /** Houses Person B's sub lord reaches (person2Coverage). */
+  personBCoverage: number[];
+  rationale: string;
+  source: "get_couple_csl_factors" | "get_couple_dasha_sync";
 };
 
-export type CuspalVerdict = "EXCELLENT" | "GOOD" | "AVERAGE" | "BELOW_AVERAGE" | "POOR";
+/** get_couple_dasha_sync, one window when both partners run 7th/11th-house periods. */
+export type DashaSyncWindow = {
+  /** YYYY-MM-DD */
+  fromDate: string;
+  /** YYYY-MM-DD */
+  toDate: string;
+  personAMahadasha: string;
+  personAAntardasha: string;
+  personBMahadasha: string;
+  personBAntardasha: string;
+  /** The engine's figure from the overlap length, as returned. */
+  confidence: number;
+  rationale: string;
+};
 
+/** individualPrerequisites: KSK's six individual-chart points, a gate rather than weights. */
+export type CuspalPrerequisite = {
+  point: string;
+  /** Whether the couple tools evaluate this point at all. */
+  coveredHere: boolean;
+};
+
+/**
+ * get_couple_csl_factors + get_couple_dasha_sync. KP. There is no overall
+ * verdict: the step tools return none, and the composite's overallScore is an
+ * unlabelled average, so this app does not show one.
+ */
 export type KpCuspal = {
-  verdict: CuspalVerdict;
-  /** The tool's own note on why it replaces Vedic Porutham. */
-  porouthamRejectionNote: string;
+  /** Exactly 6: the five promise factors, then DASHA_SYNC. */
   factors: CuspalFactor[];
+  /** Earliest first, as returned. An empty array is valid. */
+  dashaSyncWindows: DashaSyncWindow[];
+  prerequisites: CuspalPrerequisite[];
+  /** The tool's prerequisiteNote, why the six points come first. */
+  prerequisiteNote: string;
 };
 
 export type Systems = {
@@ -145,6 +193,67 @@ export type Doshas = {
    * alone"). Pulled from the tool's own response text, never invented.
    */
   kpDissent: string;
+};
+
+/** get_punarphoo, one party. KP. Delays the date of a marriage and never denies it. */
+export type PunarphooParty = {
+  present: boolean;
+  strength: "none" | "sign-level" | "star-and-sub";
+  /** houseClause.severity as returned: "none", "delay" or "delay-or-denial". */
+  severity: string;
+  reasons: string[];
+  /** cancellation.cancelled. Kar's Sun cancellations are reported, never applied. */
+  cancelled: boolean;
+  /** The party's note, plus houseClause.note when severity is not "none". */
+  note: string;
+};
+
+/** get_punarphoo with person2, both charts in one call (Reader 4 p.82 asks for both). */
+export type Punarphoo = {
+  personA: PunarphooParty;
+  personB: PunarphooParty;
+  /** The tool's top-level note. */
+  note: string;
+};
+
+/** get_marital_discord_signature, one agent row. */
+export type DiscordAgent = {
+  planet: string;
+  subLord: string;
+  discordHouses: number[];
+  unionHouses: number[];
+  /** True when the sub lord also signifies 2, 7 or 11, which canon p.73 reads as short-lived. */
+  temporary: boolean;
+  /** Named only for a Mars or Saturn sub lord, else null. */
+  manner: string | null;
+};
+
+/** get_marital_discord_signature for one chart. Only the narrowed lists, never the raw one. */
+export type DiscordRead = {
+  /** fruitfulAgents: the raw agents narrowed by the Ruling Planets. */
+  fruitfulAgents: DiscordAgent[];
+  /** criticalAgents: fruitful agents with no 2/7/11 link. */
+  criticalAgents: DiscordAgent[];
+  /** The tool's universalDiscord.note. */
+  note: string;
+};
+
+/**
+ * get_marital_discord_signature, run once per chart. KSK's own discord rule
+ * (KP Reader 4 canon p.73): any planet whose sub lord signifies 6, 10 or 12,
+ * with Mars given no special standing. The KP counterpart to Manglik.
+ */
+export type Discord = {
+  personA: DiscordRead;
+  personB: DiscordRead;
+  /** The tool's own disclaimer, carried verbatim. Required. */
+  disclaimer: string;
+};
+
+/** KP marriage factors read per chart: Punarphoo (delay) and KSK's discord rule. */
+export type KpMarriage = {
+  punarphoo: Punarphoo;
+  discord: Discord;
 };
 
 /** get_spouse_characteristics, run once per chart. */
@@ -191,6 +300,7 @@ export type MatchResponse = {
   headline: Headline;
   systems: Systems;
   doshas: Doshas;
+  kpMarriage: KpMarriage;
   partnerProfile: PartnerProfile;
   disagreements: Disagreement[];
   confidence: Confidence;

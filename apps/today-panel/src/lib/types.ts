@@ -21,6 +21,13 @@ export type PlaceInput = {
 /** The input after the route read the offset for the date from the time zone. */
 export type ResolvedPlaceInput = PlaceInput & {
   utcOffsetMinutes: number;
+  /**
+   * The local wall clock (no zone suffix) the ruling planets are judged at:
+   * the current minute when the date is today in timeZone, else local noon.
+   */
+  rpMomentLocal: string;
+  /** True when rpMomentLocal is the current minute, false when it is noon on another date. */
+  rpMomentIsNow: boolean;
 };
 
 /** The place as the model writes it, before the route adds the clock it used. */
@@ -102,6 +109,38 @@ export type SubLordChange = {
   hoursUntilChange: number;
 };
 
+/** get_ruling_planets_at_judgement, holdsUntil.changes, one member changing lord. */
+export type RulingPlanetChange = {
+  member: string;
+  from: string;
+  to: string;
+  cause: string;
+};
+
+/**
+ * get_ruling_planets_at_judgement. The KP Ruling Planets of one moment at the
+ * city: the five members, the ranked set, and the instant the set changes.
+ */
+export type RulingPlanetsNow = {
+  /** The moment judged, local wall clock at the city. Set by the route, not the model. */
+  momentLocal?: string;
+  /** True when that moment is the current minute, false when it is noon on another date. */
+  momentIsNow?: boolean;
+  weekdayLord: string;
+  moonSignLord: string;
+  moonStarLord: string;
+  ascSignLord: string;
+  ascStarLord: string;
+  /** rulingPlanets.ranked, strongest first, as returned. */
+  ranked: string[];
+  /** rulingPlanets.nodeRule, how Rahu and Ketu joined the set. */
+  nodeRule: string;
+  /** holdsUntil.instant, ISO UTC, or null when the tool returned no holdsUntil. */
+  holdsUntilUTC: string | null;
+  /** holdsUntil.changes. */
+  changesAtHoldsUntil: RulingPlanetChange[];
+};
+
 /** The JSON the model writes, before the route sets the place's clock. */
 export type TodayModelResponse = Omit<TodayResponse, "place"> & {
   place: ModelPlace;
@@ -115,6 +154,7 @@ export type TodayResponse = {
   hora: HoraHour[];
   moon: MoonNow;
   nextChanges: SubLordChange[];
+  rulingPlanets: RulingPlanetsNow;
   /** One or two sentences. Descriptive, never advice. */
   summary: string;
   /** Mandated in the prompt, validated on arrival, rendered by DisclaimerNote. */

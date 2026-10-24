@@ -18,28 +18,54 @@ correct response is to say so, not to guess. This app has a real UI state for th
 | Tool | What it contributes | System |
 |---|---|---|
 | `get_horary_chart_v2` | The chart cast from the number, plus the Moon-connectivity gate | KP |
-| `get_horary_advanced` | Number intuition (does the chosen number's own sub lord confirm the question) | KP |
+| `get_horary_number_intuition` | Number intuition (does the chosen number's own sub lord confirm the question), plus the stated number methods and the two ruling-planet definitions, side by side | KP, with KP-extended methods labelled |
 | `get_medical_horary` | Disease horary, 5 named query types, its own withhold gate | KP |
 | `get_career_horary` | 14 named work questions, its own withhold gate | KP |
-| `get_lost_or_missing` | Direction, distance, in-place location, recovery verdict | KP |
+| `get_lost_article_recovery` | The 11th cusp sub lord recovery verdict and the dated recovery periods (paged) | KP |
+| `get_lost_article_location` | Direction, distance class, and the spot on the premises | KP |
+| `get_lost_article_nature` | Whether the article is mineral, wood or root, or a living being (lost or theft) | KP |
+| `get_lost_article_thief` | A class description of the thief or missing person (theft or missing person) | KP |
 | `get_arrival_timing` | Will the awaited person, letter or conveyance arrive, and when | KP |
 | `get_horary_serial` | Optional follow-up: compares two real sessions of the same question | KP |
 
-Horary is the one family of Lumin tools with no cross-system tools to label. All seven tools above
-are orthodox Krishnamurti Paddhati. So nothing here needs the "attribute it as such" treatment that
-the other example apps give their Parashari or Jaimini tools.
+Every tool above is orthodox Krishnamurti Paddhati. Two blocks inside
+`get_horary_number_intuition` carry KP-extended methods beside KSK's own:
+
+- **How the number is checked.** Four stated methods, each with its system and source: KSK's
+  self-validating number (KP), the Gulbarga short method, the KP E-zine 2009 test and Prabhakar's
+  number ruling planets (KP-extended). The app renders all four side by side with a system chip
+  each. None is picked, and none feeds the verdict.
+- **Ruling planets, two definitions.** KSK's, from the Ascendant rising at the moment (the one
+  every KP judgement here reads, marked "applied"), and Prabhakar's, from the number's own lords
+  (marked "reported only"). Both render side by side with the tool's own note on where they
+  differ.
+
+The same two blocks are also tools of their own, `get_horary_number_methods` and
+`get_horary_ruling_planets_variants`. This app does not call them: given the same moment, they
+return exactly the blocks `get_horary_number_intuition` already carries, so a second call would
+buy nothing.
+
+**Recovery periods are paged, and the app reads them only when they can be shown.** When the gate
+withholds, page 1 of `get_lost_article_recovery` gives the recovery verdict and no window is
+reported, so the prompt stops there. When the gate answers, the model reads every page. The list
+can run to hundreds of periods, so the screen shows the first 12 in the tool's own confidence order,
+and a reasoning step says how many were read in total. Raise the cap in the prompt and the route
+together if your screen can hold more.
 
 ## What it costs
 
 | Path | Calls |
 |---|---|
-| A general question (no dedicated tool for the topic) | `get_horary_chart_v2` + `get_horary_advanced` = **2** |
-| A medical, career, lost, or arrival question | + one type-specific tool = **3** |
+| A general question (no dedicated tool for the topic) | `get_horary_chart_v2` + `get_horary_number_intuition` = **2** |
+| A medical, career, or arrival question | + one type-specific tool = **3** |
+| A lost article or a missing person | + recovery, location, and nature or thief = **5** |
+| A theft | + recovery, location, nature and thief = **6** |
+| A lost question whose gate answers | + one call per further page of recovery periods, read to the last page |
 | The optional "track this over time" follow-up | `get_horary_serial` = **+1**, once |
 
 The free plan is 300 tool calls a month per account. All keys on an account share that allowance.
-So this app runs 100 to 150 questions a month on the free plan. The number depends on how many
-questions are general and how many are type-specific.
+So this app runs roughly 50 to 150 questions a month on the free plan. The number depends on the
+mix: a general question costs 2 calls, a theft at least 6.
 
 The composite `run_*` tools do not apply here. A horary question is cast for one moment. It is not
 a life-area reading, so there is nothing to split across many tools.
@@ -57,7 +83,7 @@ Other tools can also withhold an answer:
 - `get_medical_horary` and `get_career_horary` have a second, independent withhold. They rotate
   the lagna to the relevant relation. They can fail their own connectivity test even when the base
   gate passed.
-- `get_lost_or_missing` can return an inconclusive `WITHHELD` recovery verdict. This happens when
+- `get_lost_article_recovery` can return an inconclusive `WITHHELD` recovery verdict. This happens when
   its 11th cuspal sub lord has no overlap with the recovery houses or the loss houses.
 
 The app treats each of these as a complete, honest answer everywhere:
@@ -83,22 +109,25 @@ bun run --filter horary-desk dev   # http://localhost:3111
 
 ## The detail worth copying
 
-**These seven tools spell the horary number field in three different ways. They spell the moment
-and offset fields in two different ways.** This is the sharpest trap in the set. So read each field
-name from the tool's own Zod schema. Never assume it from a neighbouring tool.
+**The moment of judgment goes in the same four fields on every tool, but the number field is
+spelled three ways.** So read each field name from the tool's own schema. Never assume it from a
+neighbouring tool.
 
-- `get_horary_chart_v2` and `get_horary_advanced` use `target_number`. They also use the full set
-  of snake_case birth-data fields: `birth_datetime`, `latitude`, `longitude`,
-  `utc_offset_minutes`, `ayanamsa`. The fields have birth-data names, the same as `get_panchang` in
-  the today-panel example. But the values carry the QUERY moment and place, never a birth. This
-  app has no birth chart anywhere.
-- `get_lost_or_missing` and `get_arrival_timing` also use the snake_case birth-data fields, but the
-  number field is `question_number`, not `target_number`.
-- `get_medical_horary` and `get_career_horary` do not use the birth-data shape at all. They declare
-  their own schema: `target_number` again, but `datetime` (not `birth_datetime`) and
-  `utcOffsetMinutes` (camelCase, not `utc_offset_minutes`).
-- The `sessions[]` entries of `get_horary_serial` use `questionNumber` (camelCase, a third
-  spelling), with `datetime` and `utcOffsetMinutes`.
+- Every horary tool takes the moment as `judgement_datetime` (the local wall clock at the place,
+  no zone suffix), `judgement_latitude`, `judgement_longitude` and
+  `judgement_utc_offset_minutes`. The older birth-style (`birth_datetime`, `latitude`, ...) and
+  camelCase (`datetime`, `utcOffsetMinutes`) spellings are deprecated. The route computes the
+  moment on the server when the request arrives (`judgementLocal()` in `src/lib/prompt.ts`), so
+  the model never does clock arithmetic.
+- `get_horary_number_intuition` is the one exception: its schema still requires `birth_datetime`,
+  `latitude` and `longitude` for the natal half it shares with the validation panel. The prompt
+  fills them with the same moment and place. They name no birth.
+- `get_horary_chart_v2`, `get_horary_number_intuition`, `get_medical_horary` and
+  `get_career_horary` use `target_number`.
+- The four lost-article tools and `get_arrival_timing` use `question_number`.
+- The `sessions[]` entries of `get_horary_serial` use `questionNumber` (camelCase), with the same
+  four `judgement_*` fields on every session. The trend route converts each session's UTC instant
+  to that local wall clock itself before the prompt is built.
 
 On the horary endpoints that need it, the MCP server maps `target_number` to the engine's internal
 `questionNumber`. The model cannot see that mapping. The model must send the field name that the
@@ -106,7 +135,7 @@ schema of that specific tool declares. So the prompt gives the field names tool 
 trusts a pattern from the last tool that the model called.
 
 **Two of the five question types have no matching event in the event catalog of the engine.**
-`get_horary_chart_v2` and `get_horary_advanced` both check `query_event` against one fuzzy-matched
+`get_horary_chart_v2` and `get_horary_number_intuition` both check `query_event` against one fuzzy-matched
 event list. The rest of the engine uses the same list: Marriage, Career / Job Start, Financial
 Loss, and about 73 more. The list has no "Lost Article" or "Awaited Arrival" entry.
 
@@ -116,7 +145,7 @@ Instead, it names a labelled proxy:
 - `Financial Loss` for lost, theft and missing-person questions
 - `Return Home` for arrival questions
 
-The response must say plainly that the event is a proxy. `get_lost_or_missing` and
+The response must say plainly that the event is a proxy. The lost-article tools and
 `get_arrival_timing` compute their own verdicts from their own house logic. That logic is
 completely independent of the proxy event. To present the two as the same claim would be a
 provenance error. The `event` field of the response always names exactly the event that the base

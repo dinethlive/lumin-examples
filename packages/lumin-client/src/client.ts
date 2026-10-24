@@ -80,7 +80,9 @@ function mcpUrl(): string {
 type LooseBlock = {
   type: string;
   text?: string;
+  id?: string;
   name?: string;
+  tool_use_id?: string;
   is_error?: boolean;
   content?: unknown;
 };
@@ -166,6 +168,7 @@ export async function runLumin(opts: LuminRunOptions): Promise<LuminRunResult> {
   ];
 
   const toolCalls: LuminToolCall[] = [];
+  const toolNames = new Map<string, string>();
   const usage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
   let turns = 0;
 
@@ -214,12 +217,18 @@ export async function runLumin(opts: LuminRunOptions): Promise<LuminRunResult> {
     usage.cacheReadTokens += response.usage.cache_read_input_tokens ?? 0;
 
     const blocks = response.content as unknown as LooseBlock[];
+    // The result block carries only tool_use_id; the name is on its mcp_tool_use.
+    for (const block of blocks) {
+      if (block.type === "mcp_tool_use" && block.id && block.name) {
+        toolNames.set(block.id, block.name);
+      }
+    }
     for (const block of blocks) {
       if (block.type === "mcp_tool_result") {
         const preview = previewOf(block.content);
         const isError = block.is_error === true;
         toolCalls.push({
-          name: block.name ?? "unknown",
+          name: toolNames.get(block.tool_use_id ?? "") ?? "unknown",
           isError,
           preview,
         });

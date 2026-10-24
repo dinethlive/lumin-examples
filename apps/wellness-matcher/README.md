@@ -18,14 +18,14 @@ categories. Fork the app and replace the samples with your own SKUs.
 | `get_full_chart` | Ascendant, planets, dasha overview | KP |
 | `get_planets` | Detailed positions, dignities, retrograde flags | KP |
 | `get_house_cusps` | All 12 cusps with sign lord, star lord, sub lord | KP |
-| `get_nakshatra_details` | Moon nakshatra and pada | KP |
+| `get_nakshatra_pada` | Moon nakshatra, nakshatra lord and pada | KP |
 | `get_aspects_and_strength` | Whole-sign aspect geometry and a 0-100 house strength score | Vedic Parashari, cross-system reference |
 | `get_boundary_warnings` | Sub-lord credibility check. A CRITICAL flag within 6 arc-minutes warns that a small correction may flip the prakriti read | KP |
 | `get_ayurvedic_constitution` | The vata/pitta/kapha percentage triple, primary and secondary dosha. This app's own spine | Vedic Parashari, cross-system reference |
-| `get_shadbala` | Six-fold planetary strength (Sthana, Dig, Kala, Cheshta, Naisargika, Drik). The app uses it to judge which dosha-carrying planet is truly strong | Vedic Parashari, cross-system reference |
+| `get_shadbala_index` | Lumin's own 0-100 planetary strength index over six components (not the BPHS Shadbala). The app uses it to judge which dosha-carrying planet is truly strong | Lumin extension, labelled as such |
 
-Three of the nine tools are Vedic Parashari, not orthodox Krishnamurti Paddhati (KP). One of them is
-the app's own spine, `get_ayurvedic_constitution`. The system prompt tags each one inline. The
+Two of the nine tools are Vedic Parashari and one is a Lumin extension, not orthodox Krishnamurti
+Paddhati (KP). One of the Parashari tools is the app's own spine, `get_ayurvedic_constitution`. The system prompt tags each one inline. The
 model's summary names them as a cross-system reading beside the KP layer, never as a KP finding.
 Roughly a third of the Lumin MCP server's surface is not KP. So this discipline matters on almost
 every app built on it, not only this one.
@@ -48,7 +48,7 @@ for them.
 
 The free plan is 300 tool calls a month per account, shared by all of its keys. So the shipped path
 runs about 33 matches a month on the free plan. The minimum path loses the credibility check, the
-constitution drivers that Shadbala ranks, and most of the KP foundation. It still returns a real
+constitution drivers that the strength index ranks, and most of the KP foundation. It still returns a real
 prakriti read.
 
 ## The detail worth copying

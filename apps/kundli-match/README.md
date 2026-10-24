@@ -17,21 +17,34 @@ three systems and name where they disagree. A single-score API cannot do that.
 | `get_boundary_warnings` | The birth-time confidence pill. Runs once per person. Flags any cusp or planet within 10 arc-minutes of a sub-lord boundary | KP |
 | `get_ashta_koota_milan` | The familiar 36-point Guna Milan across all eight kootas (Varna, Vashya, Tara, Yoni, Graha Maitri, Gana, Bhakoota, Nadi) | Vedic Parashari |
 | `check_compatibility` | The 7-factor KP score (Moon compatibility, Venus-Mars attraction, Jupiter harmony, sub-lord matching, dasha sync, dignity match, aspect harmony) | KP |
-| `get_compatibility_advanced` | Six cuspal sub-lord factors (LOVE, MARRIAGE, FINANCE, UNION, DENIAL_ABSENCE, DASHA_SYNC). The rigorous KP version, built explicitly to replace Vedic Porutham | KP |
+| `get_couple_csl_factors` | The five cuspal sub lord promise factors across both charts (LOVE, MARRIAGE, FINANCE, UNION, DENIAL_ABSENCE), each with the houses each partner's sub lord reaches, plus KSK's six individual-chart points that come first. The rigorous KP read, built to replace Vedic Porutham | KP |
+| `get_couple_dasha_sync` | Every window when both partners run Mahadasha and Antardasha lords signifying 7 or 11, and the DASHA_SYNC row read off them. A shared-timing claim, kept apart from the promise factors | KP |
 | `check_doshas` | Manglik, Kalsarpa, Sadhesati, Pitra Dosha and Kemadruma. Runs once per person. Returns the KP corpus's own dissent from the Manglik premise beside the traditional finding | Vedic Parashari |
 | `get_kalsarpa_variants` | Names WHICH of the 12 Kala Sarpa variants applies. Runs once per person | Vedic Parashari |
 | `get_spouse_characteristics` | A structured spouse description from the star lord of the 7th cuspal sub lord. Runs once per chart, so each direction gets its own facets | KP |
+| `get_punarphoo` | The natal Moon and Saturn tie that delays the date of a marriage and never denies it. One call reads both charts (Reader 4 asks for both), labelled per person | KP |
+| `get_marital_discord_signature` | KSK's own discord rule: any planet whose sub lord signifies 6, 10 or 12, with Mars given no special standing. Runs once per chart. Shown right after Manglik, so the two traditions' answers sit side by side, with the tool's own disclaimer | KP |
+
+The KP cuspal read used to come from one bundled tool, now named `get_compatibility_panel`. The
+app calls its two step tools instead. Each returns one whole
+calculation, and neither returns the panel's `overallScore`, which is an unlabelled average across a
+promise claim and a timing claim. So the cuspal card shows six factors and no overall score.
+
+`get_separation_trigger` and `get_separation_risk_windows` are not used, on purpose. With
+`get_marital_discord_signature` they rebuild the advisor-only `get_marital_separation`, and a
+separation calendar for each person is not a matching input.
 
 `run_kundli_match_complete`, the one-call composite, is **not** in `ALLOWED_TOOLS`, on purpose. In
 a single call, it cross-checks four things:
 
 - Ashta Koota
-- the KP read of six cuspal factors
+- the KP read of the cuspal factors
 - a Manglik check on both partners
 - the Jaimini Upapada Lagna relationship
 
 But it does not expose the 7-factor KP score, a named Kala Sarpa variant, spouse characteristics
-in either direction, or a birth-time confidence read. This app exists to show three independently
+in either direction, Punarphoo for both people, KSK's discord rule, or a birth-time confidence
+read. This app exists to show three independently
 scored systems and where they disagree. For that, each system needs its own score. So the app
 takes the expanded path instead. The next section shows what that costs.
 
@@ -42,11 +55,11 @@ appear nowhere in this app.
 
 | Path | Calls per match | What you get |
 |---|---|---|
-| As shipped, the expanded path | **11** | All three systems, each scored independently. Manglik and Kalsarpa, with the named variant, for both people. The KP dissent on Manglik. Spouse characteristics in both directions. A birth-time confidence pill for each chart |
-| The one-call composite, `run_kundli_match_complete` alone | **1** | Ashta Koota, the KP read of six cuspal factors, a Manglik present/absent flag for both partners, and the Jaimini Upapada Lagna relationship. No 7-factor KP score, no Kala Sarpa variant name, no spouse characteristics, no confidence pill |
+| As shipped, the expanded path | **15** | All three systems, each scored independently, with the shared dasha windows. Manglik and Kalsarpa, with the named variant, for both people. The KP dissent on Manglik and KSK's discord rule for each chart. Punarphoo for both people. Spouse characteristics in both directions. A birth-time confidence pill for each chart |
+| The one-call composite, `run_kundli_match_complete` alone | **1** | Ashta Koota, the KP read of the cuspal factors, a Manglik present/absent flag for both partners, and the Jaimini Upapada Lagna relationship. No 7-factor KP score, no Kala Sarpa variant name, no spouse characteristics, no confidence pill |
 
 The free plan is 300 tool calls a month per account. All keys on an account share that allowance.
-At 11 calls a match, that is about 27 matches a month on the free plan. The composite alone would
+At 15 calls a match, that is 20 matches a month on the free plan. The composite alone would
 run about 300. For a matrimonial platform that runs this at volume, that gap is a real cost
 argument.
 
@@ -61,8 +74,11 @@ the "why" behind the number needs the expanded path that this app ships.
    birth place, birth time zone, and gender. The time has a "time not known" toggle.
 2. An agreement meter (high, mixed, low). The app computes it from whether the three systems
    concur. Each chart also gets a birth-time confidence pill. Below them is a panel for each
-   system, with its own score, factors and headline verdict. Directly below is the dosha card. It
-   shows the doshas and the KP dissent on the same screen.
+   system, with its own factors. Ashta Koota and the KP seven-factor read carry their own score and
+   verdict. The KP cuspal read carries six factors, the shared dasha windows and KSK's six
+   individual-chart points, and no overall score. Directly below is the dosha card. It shows the
+   doshas and the KP dissent on the same screen. After it comes a KP card, read per person:
+   Punarphoo (a delay, never a denial) and KSK's discord rule, which gives Mars no special standing.
 3. A disagreement drawer. It names every place where the systems really disagree, and why, in the
    terms of each tradition.
 4. A partner-profile card with spouse characteristics from each chart, read independently in both
@@ -73,22 +89,26 @@ the "why" behind the number needs the expanded path that this app ships.
 **The field names for the second person differ on almost every tool, and none of them agree.**
 Check them with grep before you write a matching app on this server. Do not assume them.
 
-- `get_ashta_koota_milan` and `run_kundli_match_complete` (if you use it) take Person A's data at
-  the normal snake_case top level: `birth_datetime`, `latitude`, `longitude`,
-  `utc_offset_minutes`, `ayanamsa`. Person B goes in a nested `partner` object with **camelCase**
-  keys: `datetime`, `latitude`, `longitude`, `utcOffsetMinutes`, `ayanamsa`. That `ayanamsa`
-  accepts only `kp`, `lahiri`, `raman` or `true_chitra`, not `kp_new` or `khullar`.
+- `get_ashta_koota_milan` and `run_kundli_match_complete` (if you use it) take one chart at the
+  normal snake_case top level: `birth_datetime`, `latitude`, `longitude`, `utc_offset_minutes`,
+  `ayanamsa`. The other goes in a nested `partner` object with **camelCase** keys: `datetime`,
+  `latitude`, `longitude`, `utcOffsetMinutes`, `ayanamsa`. The tool scores the top-level chart as
+  the groom, and Varna, Tara, Bhakoota and Yoni are directional. So the app puts the male partner
+  at the top level and records whose chart that was in `systems.ashtaKoota.groom`.
 - `check_compatibility` also takes Person A at the snake_case top level. But Person B goes in a
   nested `person2` object, in camelCase. That object also carries an optional `gender`.
-- `get_compatibility_advanced` takes **no top-level birth data at all**. Both people are explicit
-  nested objects, `person1` and `person2`, both in camelCase. The tool does not inject anything
-  automatically.
-- `check_doshas`, `get_kalsarpa_variants`, `get_spouse_characteristics` and `get_boundary_warnings`
-  are single-chart tools with no second-person field of any kind. Each one runs twice: once with
-  Person A's data at the top level, and once with Person B's data.
+- `get_couple_csl_factors` and `get_couple_dasha_sync` take **no top-level birth data at all**.
+  Both people are explicit nested objects, `person1` and `person2`, both in camelCase. The tools
+  do not inject anything automatically.
+- `get_punarphoo` takes Person A at the snake_case top level and Person B in an optional nested
+  `person2` object, in camelCase. It answers with `partyA` and `partyB`.
+- `check_doshas`, `get_kalsarpa_variants`, `get_spouse_characteristics`,
+  `get_marital_discord_signature` and `get_boundary_warnings` are single-chart tools with no
+  second-person field of any kind. Each one runs twice: once with Person A's data at the top level,
+  and once with Person B's data.
 
 A wrong shape here is a silent tool failure inside the model's conversation. You do not see a
-schema error. `src/lib/prompt.ts` gives the exact shape for each of the eleven calls, so the model
+schema error. `src/lib/prompt.ts` gives the exact shape for each of the fifteen calls, so the model
 does not have to guess. This README repeats the shapes. Then a developer who forks this app does
 not have to derive them again by hand from `kp-mcp/src/mcp/tools.ts`.
 
@@ -122,9 +142,9 @@ bun run --filter kundli-match dev   # http://localhost:3113
 ## Make it yours
 
 - **Use the cheap path.**
-  1. Replace the seven tools in `ALLOWED_TOOLS` with only `run_kundli_match_complete`.
+  1. Replace the tools in `ALLOWED_TOOLS` with only `run_kundli_match_complete`.
   2. Remove these from the response shape: the `kpSevenFactor` panel, the Kala Sarpa variant
-     name, the spouse-characteristics card and the confidence pills.
+     name, `kpMarriage`, the spouse-characteristics card and the confidence pills.
 
   The result is a version with 1 call per match. It fits easily inside the free plan at volume.
   But the drawer loses its best material. The composite's Manglik flag has no dissent text, and
@@ -139,6 +159,10 @@ bun run --filter kundli-match dev   # http://localhost:3113
   want less emphasis on it. The KP dissent text makes a strong case for less emphasis. Either way,
   keep the KP dissent text visible, not only computed.
 
+- **Drop the KP marriage card.** Remove `get_punarphoo` and `get_marital_discord_signature` from
+  `ALLOWED_TOOLS` and `kpMarriage` from the shape. That saves three calls a match. The drawer then
+  loses the Manglik against discord-rule comparison.
+
 ## The disclaimer it ships
 
 > This reads three independent compatibility systems and where they agree or disagree. It is one
@@ -148,6 +172,10 @@ bun run --filter kundli-match dev   # http://localhost:3113
 The system prompt requires this disclaimer. The route checks it as a required field when the
 response arrives, and the page shows it. The route also refuses a `STRONG` recommendation with
 `LOW` agreement, because the point of this app is to never hide a real disagreement.
+
+`get_marital_discord_signature` returns its own disclaimer. The app carries it in
+`kpMarriage.discord.disclaimer`, the route requires it, and the KP card shows it under the discord
+rule.
 
 Disclaimers here are data, not decoration. If the model omits the disclaimer, the response fails
 validation. The request then returns an error instead of a page without it.

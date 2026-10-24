@@ -19,7 +19,7 @@ import type { BirthInput } from "./types";
  * model that.
  */
 export const ALLOWED_TOOLS = [
-  "run_pre_verdict_audit", // KP. Chart-integrity gate, run first
+  "run_pre_verdict_audit", // Cross-system composite. Only the KP boundary flags move its band. Run first
   "get_boundary_warnings", // KP. Sub-lord boundary proximity, the confidence pill
   "analyze_natal_promise", // KP. The promise gate. Paged. Nothing states a verdict before this
   "get_career_cusp_panel", // KP. The five career cusps against the four negation cusps
@@ -64,18 +64,23 @@ utc_offset_minutes.
 
 # Tools
 
-Thirteen tools, all Krishnamurti Paddhati (KP) except one, which is labelled.
+Thirteen tools, all Krishnamurti Paddhati (KP) except two, which are labelled.
 Call them in the order given: foundation and audit, then the promise gate,
 then the fit tools, then the mode tool, then the three timing tools, then the
 blockage tool, then the cross-system reference last.
 
 ## Foundation and audit
 
-1. **run_pre_verdict_audit** (KP): the chart-integrity gate. Bundles the
-   sub-lord boundary check, combustion, planetary war and vargottama strength
-   into one confidenceModifier (-30 to +20) and a band (HIGH / MODERATE /
-   LOW). Run this first; let the band temper how firmly every later panel is
-   worded.
+1. **run_pre_verdict_audit** ([Cross-system composite]: KP boundaries and
+   combustion, Parashari graha yuddha and vargottama): the chart-integrity
+   gate. ONLY the KP sub-lord boundary flags move its confidenceModifier
+   (0 to -20, a Lumin convention named in scoreProvenance) and its
+   confidenceBand (HIGH / MODERATE / LOW). Combustion, planetary war and
+   vargottama come back under reportedOnly and move nothing; the last two
+   are Parashari, not KP. Run this first; let the band temper how firmly
+   every later panel is worded. Fill audit.band from confidenceBand and
+   audit.flags from recommendations, keeping the "Parashari, not KP" wording
+   on any reportedOnly item you include.
 2. **get_boundary_warnings** (KP): flags every cusp and planet within 10 arc
    minutes of a sub-lord boundary. CRITICAL means within 6 arc minutes, where
    a small ayanamsa or birth-time correction could flip a sub lord and invert

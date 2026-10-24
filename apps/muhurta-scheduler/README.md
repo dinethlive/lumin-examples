@@ -18,7 +18,7 @@ step. They do not want a horoscope widget attached to the side of one.
 | `find_wedding_muhurta`, `find_exam_time`, `find_interview_time`, `find_meeting_time`, `find_contract_signing_time`, `find_business_launch_time`, `find_travel_departure_time`, `find_property_muhurta`, `find_surgery_time` | The nine named electional tools. Each has its own event key built in, so the model cannot switch it to another event | KP |
 | `find_election_window` | The generic fallback for any catalog event without a named tool, roughly 29 of the 38 | KP |
 | `rank_candidate_dates` | Ranks 2 to 10 dates the user already has in mind, by the same test | KP |
-| `get_muhurta_advanced` | The older three-condition triangulation (T40). The app runs it as an independent second opinion beside the four-layer election | KP |
+| `find_auspicious_triangulation` | The older three-condition triangulation (T40). The app runs it as an independent second opinion beside the four-layer election, reads its paged moments to the last page, and shows whether the Ascendant's sign, star and sub lords all agree | KP |
 | `get_panchang` | The five limbs and sunrise/sunset for the day of the elected moment | KP |
 | `get_choghadiya_today` | The 1.5-hour period running at the elected moment | Vedic muhurta adjunct, **not** orthodox KP |
 | `get_boundary_warnings` | Flags sub-lord boundaries within 10 arc-minutes in the native's own chart. Feeds the birth-time confidence pill | KP |
@@ -31,7 +31,7 @@ detail worth copying" below.
 
 | Path | Calls per request |
 |---|---|
-| Elect a moment (`/api/elect`): one electional tool + `get_muhurta_advanced` + `get_panchang` + `get_choghadiya_today` + `get_boundary_warnings` | **5** |
+| Elect a moment (`/api/elect`): one electional tool + `find_auspicious_triangulation` (one call per page) + `get_panchang` + `get_choghadiya_today` + `get_boundary_warnings` | **5 or more** |
 | Rank dates already in hand (`/api/rank`): `rank_candidate_dates` + `get_boundary_warnings` | **2** |
 | Event picker (`/api/catalog`): `get_election_catalog`, free discovery call | **1** |
 

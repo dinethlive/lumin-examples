@@ -1,54 +1,105 @@
-export type ChannelLevel = "calm" | "mild" | "active" | "intense";
+/** The engine's band for one channel, exactly as the tool returns it. */
+export type ChannelBand = "VERY_LOW" | "LOW" | "MODERATE" | "HIGH" | "VERY_HIGH";
 
 export type ChannelId = "temperature" | "precipitation" | "wind";
 
+/**
+ * One weather channel as the tool returns it. The score is the engine's raw
+ * number, not a percentage: temperature and precipitation are signed (negative
+ * is cold or dry), wind/storm runs from zero upward.
+ */
 export type Channel = {
-  level: ChannelLevel;
-  band: string;
+  band: ChannelBand;
   score: number;
-  note: string;
+  /** The tool's `signal` line, word for word. */
+  signal: string;
+  /** Labels of the signatures that fired, in the tool's order. */
+  signatures: string[];
 };
 
-export type Lunation = "new-moon" | "full-moon";
+/** The engine's overall disposition for one chart. */
+export type Disposition = "WET" | "DRY" | "HOT" | "STORMY" | "MIXED" | "SETTLED";
 
-export type OutdoorRating = "favourable" | "mixed" | "unfavourable";
+export type CslVerdictWord = "RAIN" | "HEAT" | "DRY" | "MIXED" | "INDETERMINATE";
 
+/** The 4th-cusp sub lord verdict (cslFourth), as the tool returns it. */
+export type CslFourth = {
+  sub_lord: string;
+  star_lord: string;
+  signified_houses: number[];
+  verdict: CslVerdictWord;
+  /** The tool's final reasoning step (Step 4), word for word. */
+  reasoning: string;
+};
+
+/** The Sapta Nadi Chakra block (saptaNadi). Classical, not KP. */
+export type SaptaNadi = {
+  moon_nadi: string;
+  moon_group: "RAIN" | "DRY" | "TRANSITIONAL";
+  moon_intensifies_rain: boolean;
+  precipitation_score: number;
+  precipitation_band: string;
+  storm_flag: boolean;
+  drought_flag: boolean;
+  rain_duration: string;
+  group_counts: { RAIN: number; DRY: number; TRANSITIONAL: number };
+};
+
+export type Lunation = "new" | "full";
+
+/** One row of get_weather_windows: the whole bundle for one lunation chart. */
 export type WeatherWindow = {
   label: string;
+  /** Local dates at the place, from window_start and window_end. */
   start: string;
   end: string;
   lunation: Lunation;
   temperature: Channel;
   precipitation: Channel;
   wind: Channel;
-  csl_verdict: string;
-  outdoor_rating: OutdoorRating;
+  csl: CslFourth;
+  sapta_nadi: SaptaNadi;
+  disposition: Disposition;
   summary: string;
 };
 
+/** From get_weather_csl_fourth with cadence 'seasons': the season covering the range. */
 export type SeasonOutlook = {
+  /** The tool's season name, such as "autumn". */
   season: string;
-  theme: string;
+  year: number;
+  frame: "tropical" | "sidereal";
+  /** Local date of the cardinal ingress that opens the season. */
+  ingress_date: string;
+  csl: CslFourth;
 };
 
-// From get_astro_weather: the signature for the place at a single moment
-// (today), an "as of now" anchor shown beside the future lunation windows.
+/** From get_astro_weather: the signature for the place at the present moment. */
 export type CurrentConditions = {
   datetime: string;
   temperature: Channel;
   precipitation: Channel;
   wind: Channel;
-  csl_verdict: string;
+  csl: CslFourth;
+  disposition: Disposition;
   summary: string;
 };
 
-// From get_monsoon_forecast: the monsoon-onset read from the Ardra Pravesha
-// chart. Populated only for monsoon-influenced places whose range overlaps the
-// season; null otherwise.
+/**
+ * From get_monsoon_forecast: the Ardra Pravesha chart. The precipitation
+ * channel and the onset chart's own rainfall favourability are separate reads
+ * and can disagree; both are shown.
+ */
 export type MonsoonOutlook = {
   year: number;
-  onset: string;
+  /** Local date of the Sun's entry into Ardra. */
+  ingress_date: string;
+  ingress_sect: "day" | "night";
+  ascendant_sign: string;
+  rainfall_favourability: ChannelBand;
   precipitation: Channel;
+  csl: CslFourth;
+  disposition: Disposition;
   summary: string;
 };
 
@@ -92,8 +143,12 @@ export type ForecastResponse = {
   current?: CurrentConditions | null;
   monsoon?: MonsoonOutlook | null;
   windows: WeatherWindow[];
-  best_window: string;
+  /** The app's own disclaimer. */
   disclaimer: string;
+  /** The weather tools' own disclaimer, word for word. */
+  tool_disclaimer: string;
+  /** The Sapta Nadi block's own disclaimer, word for word. */
+  sapta_nadi_disclaimer: string;
 };
 
 export type ForecastInput = {
@@ -108,4 +163,8 @@ export type ForecastInput = {
 export type ResolvedForecastInput = ForecastInput & {
   utc_offset_minutes: number;
   utc_offset_minutes_at_end: number;
+  /** The wall clock at the place now, YYYY-MM-DDTHH:MM:SS, for get_astro_weather. */
+  now_local: string;
+  /** Minutes east of UTC in the zone now, for get_astro_weather. */
+  now_utc_offset_minutes: number;
 };

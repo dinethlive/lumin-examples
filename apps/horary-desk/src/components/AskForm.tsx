@@ -79,7 +79,7 @@ export function AskForm({ onResult }: Props) {
     );
     // Matched to the route's maxDuration, so a hung request cannot spin forever.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 75_000);
+    const timeout = setTimeout(() => controller.abort(), 300_000);
 
     const payload = {
       question,
@@ -227,7 +227,7 @@ export function AskForm({ onResult }: Props) {
 
       {loading && (
         <p className="text-sm text-black/50">
-          2 to 3 tool calls against the live engine, usually 15 to 45 seconds.
+          2 to 5 tool calls against the live engine, usually 20 to 90 seconds.
         </p>
       )}
 

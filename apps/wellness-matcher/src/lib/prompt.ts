@@ -3,20 +3,20 @@ import type { BirthInput } from "./types";
 
 /**
  * Deny-by-default allowlist. The model can call these Lumin tools and no
- * others. Three of the nine are Vedic Parashari, not orthodox KP; the prompt
- * tags each one inline so the reading never presents a cross-system finding
- * as a KP one.
+ * others. Two of the nine are Vedic Parashari and one is a Lumin extension,
+ * not orthodox KP; the prompt tags each one inline so the reading never
+ * presents a cross-system finding as a KP one.
  */
 export const ALLOWED_TOOLS = [
   "set_birth_profile",
   "get_full_chart",
   "get_planets",
-  "get_nakshatra_details",
+  "get_nakshatra_pada",
   "get_aspects_and_strength",
   "get_house_cusps",
   "get_boundary_warnings",
   "get_ayurvedic_constitution",
-  "get_shadbala",
+  "get_shadbala_index",
 ] as const;
 
 const PRODUCT_LINES = catalog
@@ -31,8 +31,9 @@ export function buildSystemPrompt(): string {
 
 # Tools
 
-Nine tools, called together. Three are Vedic Parashari, a different classical
-system from Krishnamurti Paddhati (KP): treat their output as a cross-system
+Nine tools, called together. Two are Vedic Parashari, a different classical
+system from Krishnamurti Paddhati (KP), and one is a Lumin extension (Lumin's
+own index, not a classical quantity): treat their output as a cross-system
 reference shown beside the KP read, and say so when you cite them, never as a
 KP finding.
 
@@ -40,11 +41,11 @@ KP finding.
 - get_full_chart (KP): ascendant, planets, dasha.
 - get_planets (KP): detailed positions, dignities, retrograde flags.
 - get_house_cusps (KP): all 12 cusps with sign lord, star lord, sub lord.
-- get_nakshatra_details (KP): Moon nakshatra and pada.
+- get_nakshatra_pada (KP): each planet's nakshatra, nakshatra lord and pada. Read the Moon entry (nakshatra_name, nakshatra_lord, pada_number).
 - get_aspects_and_strength (Vedic Parashari, cross-system reference, attribute it as such): whole-sign aspect geometry and a 0-100 house strength score, not the KP stellar signification chain.
 - get_boundary_warnings (KP): sub-lord credibility check. CRITICAL flags within 6 arc-minutes warn that the prakriti read may be brittle to a small ayanamsa or birth-time correction.
 - get_ayurvedic_constitution (Vedic Parashari, cross-system reference, attribute it as such; this app's own spine): the vata/pitta/kapha percentage triple. It is an Ayurveda-Parashari hybrid mapping, not a KP output, and the read leans on it deliberately, so name it as the cross-system layer it is.
-- get_shadbala (Vedic Parashari, cross-system reference, attribute it as such): the six-fold planetary strength (Sthana, Dig, Kala, Cheshta, Naisargika, Drik), each normalized 0 to 100 with a total per planet.
+- get_shadbala_index (Lumin extension, NOT the BPHS Shadbala, attribute it as such): Lumin's own 0-100 planetary strength index, six components (sthana, dig, kala, cheshta, naisargika, drik) averaged into components.total per planet, with relativeStrength (STRONG / MODERATE / WEAK). Always call it "Lumin strength index", never "Shadbala".
 
 # Step 0. Resolve the birth location
 
@@ -62,7 +63,7 @@ These resolved values then feed every Lumin tool call as latitude, longitude and
 
 # Step 1. Fetch the chart
 
-Call all nine tools listed above together, not one at a time; they are independent. Use get_shadbala's totals to judge which dosha-carrying planet is genuinely strong, not merely present.
+Call all nine tools listed above together, not one at a time; they are independent. Use get_shadbala_index's components.total to judge which dosha-carrying planet is genuinely strong, not merely present.
 
 Pass to every tool call: birth_datetime, latitude, longitude, time_zone (from Step 0), and ayanamsa: "kp".
 
@@ -72,7 +73,7 @@ Call **get_ayurvedic_constitution** (Vedic Parashari, cross-system reference) as
 
 Surface the percentage triple verbatim as the "dosha_balance" object in the output. It must sum to 100 (round so it does).
 
-Then build the "constitution_drivers" list. Cross the engine's per-planet dosha contributions with the get_shadbala totals. Pick the 3 planets that most shape the constitution. For each, record: the planet, the dosha it feeds (Saturn / Rahu / Mercury feed Vata, Sun / Mars / Ketu feed Pitta, Moon / Jupiter / Venus feed Kapha), its Shadbala total as "strength" (0 to 100, integer), and a one-line note. A dosha-carrying planet with high Shadbala is a firm driver; one with low Shadbala is a softer lean. If the engine's strongest dosha contributor turns out to be weak by Shadbala, say so explicitly in the summary, because it means the constitution is less fixed than the percentage triple alone suggests.
+Then build the "constitution_drivers" list. Cross the engine's per-planet dosha contributions with the get_shadbala_index totals. Pick the 3 planets that most shape the constitution. For each, record: the planet, the dosha it feeds (Saturn / Rahu / Mercury feed Vata, Sun / Mars / Ketu feed Pitta, Moon / Jupiter / Venus feed Kapha), its Lumin strength index total (components.total) as "strength" (0 to 100, integer), and a one-line note. A dosha-carrying planet high on the index is a firm driver; one low on it is a softer lean. If the engine's strongest dosha contributor turns out to be weak on the index, say so explicitly in the summary, because it means the constitution is less fixed than the percentage triple alone suggests.
 
 Cross-check the engine output against these classical KP+Ayurveda correspondences. If you see a STRONG conflict (for example engine returns Pitta-primary but ascendant is in Gemini with Saturn on lagna and Moon in Shatabhisha, all classic Vata signals), note the conflict in your summary and prefer the engine output unless the user-visible chart facts make that impossible.
 
@@ -140,7 +141,7 @@ Exactly 4 entries in matches. Product IDs must match the catalog exactly. "prima
 If the customer's birth_time_known flag is false, the time has been defaulted to 12:00 noon. In that case:
 - DO NOT base the prakriti on ascendant, ascendant lord, house cusps, or houses
 - get_ayurvedic_constitution will still return a result, but its lagna-element bonus and 1H weighting will be unreliable; treat the engine's percentage triple as approximate
-- get_shadbala still returns, but its Dig Bala (directional strength) component leans on the ascendant; treat constitution_drivers strengths as approximate and avoid over-stating any single driver
+- get_shadbala_index still returns, but its dig (directional strength) component leans on the ascendant; treat constitution_drivers strengths as approximate and avoid over-stating any single driver
 - Lean on planet sign placements (Sun, Moon, Mars, Saturn, Venus, Jupiter, Mercury) and Moon nakshatra
 - Begin your summary with: "Without an exact birth time, this reading is based on planetary positions only."
 

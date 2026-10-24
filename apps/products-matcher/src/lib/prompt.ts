@@ -3,19 +3,19 @@ import type { BirthInput } from "./types";
 
 /**
  * Deny-by-default allowlist. The model can call these Lumin tools and no
- * others. Five of the eleven are not orthodox KP (three Vedic Parashari, two
- * Jaimini); the prompt tags each one inline so the reading never presents a
- * cross-system finding as a KP one.
+ * others. Five of the eleven are not orthodox KP (two Vedic Parashari, two
+ * Jaimini, one Lumin extension); the prompt tags each one inline so the
+ * reading never presents a cross-system finding as a KP one.
  */
 export const ALLOWED_TOOLS = [
   "set_birth_profile",
   "get_full_chart",
   "get_planets",
-  "get_nakshatra_details",
+  "get_nakshatra_pada",
   "get_aspects_and_strength",
   "get_house_cusps",
   "get_boundary_warnings",
-  "get_shadbala",
+  "get_shadbala_index",
   "get_arudha_lagna",
   "get_chara_karakas",
   "get_d2_chart",
@@ -34,7 +34,8 @@ export function buildSystemPrompt(): string {
 # Tools
 
 Eleven tools, called together. Five are not orthodox Krishnamurti Paddhati
-(KP): three are Vedic Parashari, two are Jaimini. Treat their output as a
+(KP): two are Vedic Parashari, two are Jaimini, and one is a Lumin extension
+(Lumin's own index, not a classical quantity). Treat their output as a
 cross-system reference shown beside the KP read, and say so when you cite
 them in the chart signals or the summary, never as a KP finding.
 
@@ -42,10 +43,10 @@ them in the chart signals or the summary, never as a KP finding.
 - get_full_chart (KP): ascendant, planets, dasha.
 - get_planets (KP): detailed positions, dignities, retrograde flags.
 - get_house_cusps (KP): all 12 cusps with sign lord, star lord, sub lord.
-- get_nakshatra_details (KP): Moon nakshatra and pada.
+- get_nakshatra_pada (KP): each planet's nakshatra, nakshatra lord and pada. Read the Moon entry (nakshatra_name, nakshatra_lord, pada_number).
 - get_aspects_and_strength (Vedic Parashari, cross-system reference, attribute it as such): whole-sign aspect geometry and a 0-100 house strength score.
 - get_boundary_warnings (KP): sub-lord credibility check. If the lagna or 1st cusp is CRITICAL (within 6 arc-minutes of a sub-lord boundary), downweight ascendant-driven traits and lean more on Moon-sign and nakshatra signals.
-- get_shadbala (Vedic Parashari, cross-system reference, attribute it as such): six-fold planetary strength (0 to 100 per planet), used to test which "strong planet" claims in the trait mapping below are actually backed by strength rather than mere placement.
+- get_shadbala_index (Lumin extension, NOT the BPHS Shadbala, attribute it as such): Lumin's own 0-100 planetary strength index (components.total per planet, plus relativeStrength, strongest and weakest), used to test which "strong planet" claims in the trait mapping below are actually backed by strength rather than mere placement. Always call it "Lumin strength index", never "Shadbala".
 - get_arudha_lagna (Jaimini, cross-system reference, attribute it as such): the Arudha Lagna (AL), the projected public image, how the world perceives this person. The closest Jaimini reading to a consumer-facing persona.
 - get_chara_karakas (Jaimini, cross-system reference, attribute it as such): the Jaimini chara karakas. The Atmakaraka, the planet at the highest degree within its sign, marks the soul's deepest craving.
 - get_d2_chart (Vedic Parashari, cross-system reference, attribute it as such): the D2 (Hora) divisional chart, wealth-acquisition capacity. Each sign is halved into a Sun hora (active earning, status spending) and a Moon hora (accumulation, value-mindedness).
@@ -139,7 +140,7 @@ Alongside the trait read, build a "signals" array of 2 to 4 named chart readings
 
 - **Public image**: from get_arudha_lagna. The Arudha Lagna sign and its lord describe how the world perceives this person, the closest reading to a consumer-facing persona. value = the AL sign and its lord (for example "Leo, Sun-ruled"); detail = one line on how that shapes what they are drawn to buy or be seen with.
 - **Core drive**: from get_chara_karakas. The Atmakaraka, the planet at the highest degree within its sign, marks the soul's deepest craving. value = the Atmakaraka planet; detail = one line on the craving it points to (Venus to beauty and refinement, Sun to status and recognition, Mercury to ideas and novelty, Moon to comfort and belonging, Mars to action and boldness, Jupiter to meaning and generosity, Saturn to durability and restraint).
-- **Strongest planet**: from get_shadbala. value = the planet with the highest Shadbala total, with its score; detail = one line on the buying appetite that planet amplifies.
+- **Strongest planet**: from get_shadbala_index. value = its "strongest" planet with its components.total, labelled as the Lumin strength index (for example "Venus, 71 on the Lumin strength index"); detail = one line on the buying appetite that planet amplifies.
 - **Spending capacity**: from get_d2_chart. value = the dominant Hora lean (for example "Sun hora, enterprise-driven" or "Moon hora, comfort-driven") with a one-word read on premium versus value; detail = one line on the buying posture it implies (Sun hora to status purchases and signalling, Moon hora to durable comfort and accumulation), grounded in where the money planets actually fall.
 
 # Step 4. Pick 5 products
@@ -176,7 +177,7 @@ Return STRICTLY this JSON shape. No prose, no markdown fences, no preamble.
 }
 
 Set "disclaimer" to exactly:
-"A curiosity and personalization layer, not a financial or psychometric assessment. It blends a KP chart read with Vedic Parashari and Jaimini cross-system references, named as such in the chart signals above."
+"A curiosity and personalization layer, not a financial or psychometric assessment. It blends a KP chart read with Vedic Parashari and Jaimini cross-system references and a Lumin strength index, named as such in the chart signals above."
 
 Exactly 5 entries in matches. Product IDs must match the catalog exactly. Each trait in personality.traits must be one of: warm, intellectual, luxurious, traditional, homebody, elegant, practical, celebratory, nurturing, playful. personality.signals must contain 2 to 4 entries. time_zone must be an IANA name, such as Asia/Kolkata. disclaimer matches the string above exactly.
 
@@ -185,7 +186,7 @@ Exactly 5 entries in matches. Product IDs must match the catalog exactly. Each t
 If the customer's birth_time_known flag is false, the time has been defaulted to 12:00 noon. In that case:
 - DO NOT base personality on ascendant, ascendant lord, house cusps, or houses
 - Use planet sign placements (Sun, Moon, Mars, Saturn, Venus, Jupiter, Mercury) and Moon nakshatra only
-- get_arudha_lagna depends on the ascendant: SKIP the Public image signal. The Core drive (Atmakaraka) signal still works from planetary degrees, so keep it; the Strongest planet (Shadbala) signal is approximate without an exact time
+- get_arudha_lagna depends on the ascendant: SKIP the Public image signal. The Core drive (Atmakaraka) signal still works from planetary degrees, so keep it; the Strongest planet (Lumin strength index) signal is approximate without an exact time
 - get_d2_chart splits each sign by planetary longitude, so the Sun/Moon hora placement of the planets still holds without an exact birth time: KEEP the Spending capacity signal, but ignore the D2 ascendant and treat the read as a lean, not a verdict
 - Begin your summary with: "Without an exact birth time, this reading is based on planetary positions only."
 

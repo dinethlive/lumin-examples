@@ -19,16 +19,16 @@ replace the samples with your own SKUs.
 | `get_full_chart` | Ascendant, planets, dasha overview | KP |
 | `get_planets` | Detailed positions, dignities, retrograde flags | KP |
 | `get_house_cusps` | All 12 cusps with sign lord, star lord, sub lord | KP |
-| `get_nakshatra_details` | Moon nakshatra and pada | KP |
+| `get_nakshatra_pada` | Moon nakshatra, nakshatra lord and pada | KP |
 | `get_aspects_and_strength` | Whole-sign aspect geometry and a 0-100 house strength score | Vedic Parashari, cross-system reference |
 | `get_boundary_warnings` | Sub-lord credibility check. A CRITICAL lagna flag gives less weight to traits that come from the ascendant | KP |
-| `get_shadbala` | Six-fold planetary strength. It tests whether strength, or only placement, supports a "strong planet" trait claim | Vedic Parashari, cross-system reference |
+| `get_shadbala_index` | Lumin's own 0-100 planetary strength index (not the BPHS Shadbala). It tests whether strength, or only placement, supports a "strong planet" trait claim, and drives the **Strongest planet** signal | Lumin extension, labelled as such |
 | `get_arudha_lagna` | The Arudha Lagna, the projected public image. It drives the **Public image** chart signal | Jaimini, cross-system reference |
 | `get_chara_karakas` | The Atmakaraka, the soul's deepest craving. It drives the **Core drive** signal | Jaimini, cross-system reference |
 | `get_d2_chart` | The D2 (Hora) divisional chart, the capacity to acquire wealth. It drives the **Spending capacity** signal | Vedic Parashari, cross-system reference |
 
-Five of the eleven tools are not orthodox Krishnamurti Paddhati (KP). Three are Vedic Parashari,
-and two are Jaimini. The system prompt tags each one inline. The personality card shows four chart
+Five of the eleven tools are not orthodox Krishnamurti Paddhati (KP). Two are Vedic Parashari, two
+are Jaimini, and one is a Lumin extension. The system prompt tags each one inline. The personality card shows four chart
 signals: public image, core drive, strongest planet and spending capacity. Each signal names its
 system. So a buyer sees a cross-system reading, never a KP finding presented as one.
 
@@ -96,8 +96,8 @@ bun run --filter products-matcher dev   # http://localhost:3101
 ## The disclaimer it ships
 
 > A curiosity and personalization layer, not a financial or psychometric assessment. It blends a KP
-> chart read with Vedic Parashari and Jaimini cross-system references, named as such in the chart
-> signals above.
+> chart read with Vedic Parashari and Jaimini cross-system references and a Lumin strength index,
+> named as such in the chart signals above.
 
 The system prompt requires it. The route checks it as a required field when the response arrives.
 `PersonalityCard` shows it below the chart signals.

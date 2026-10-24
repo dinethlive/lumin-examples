@@ -15,12 +15,12 @@ import type { ElectInput, ElectModelOutput, ElectResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
 /**
- * Up to five tool calls (one election tool, get_muhurta_advanced, get_panchang,
+ * Five tools (one election tool, find_auspicious_triangulation read to its last page, get_panchang,
  * get_choghadiya_today, get_boundary_warnings), one of them a real scan over a
  * date range. Slower than a plain lookup; the loading copy says 20 to 70
  * seconds, so this sits comfortably above that.
  */
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const ROUTE = "/api/elect";
 

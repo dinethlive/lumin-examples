@@ -34,7 +34,7 @@ export type Product = {
 
 // A named chart reading the model surfaces beside the trait list, e.g. the
 // Arudha Lagna public image, the Jaimini Atmakaraka core drive, or the
-// strongest planet by Shadbala. Keeps the personality read auditable.
+// strongest planet by the Lumin strength index (get_shadbala_index). Keeps the personality read auditable.
 export type ChartSignal = {
   label: string;
   value: string;

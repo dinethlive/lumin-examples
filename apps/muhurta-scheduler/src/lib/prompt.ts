@@ -89,7 +89,7 @@ export const ALLOWED_TOOLS_ELECT = [
   "find_property_muhurta",
   "find_surgery_time",
   "find_election_window",
-  "get_muhurta_advanced",
+  "find_auspicious_triangulation",
   "get_panchang",
   "get_choghadiya_today",
   "get_boundary_warnings",
@@ -110,17 +110,23 @@ electional tool.
   then star then sub). Call ONLY the one named in the user message, with the fixed arguments given
   there merged on top of the birth and window fields below. Never substitute a different one of
   these ten and never invent an "event" string yourself, the routing is already decided.
-- get_muhurta_advanced (KP): the older three-condition triangulation (Lagna sub lord, Moon star
-  lord, day lord), kept alongside the four-layer test as an independent second opinion. Always
-  call this once, passing the event's plain-language label as its "event" argument.
+- find_auspicious_triangulation (KP): the older three-condition triangulation (Lagna sub lord,
+  Moon star lord, day lord), kept alongside the four-layer test as an independent second opinion.
+  Always call it, passing the event's plain-language label as its "event" argument. Its "moments"
+  array is PAGED: read \`pagination.totalItems\` and \`pageNote\` on the first response, and while
+  more pages remain call it again with every argument identical and \`page\` incremented, until
+  the last page. Combine every page's moments, in the order returned. scan_days is at most 30 for
+  this tool: pass min(scan window days, 30). It takes no granularity or preferred hours.
 - get_panchang (KP): the five limbs and sunrise/sunset for one date and place. Call this AFTER you
   know the elected moment, for the date it falls on, at the EVENT location (not the birth place).
-  Pass the event location's latitude, longitude and UTC offset as utc_offset_minutes, not a
-  time_zone.
+  Pass the elected moment's local wall clock (no zone suffix) as birth_datetime (the field carries
+  the date to read, not a birth), and the event location's latitude, longitude and UTC offset as
+  utc_offset_minutes, not a time_zone.
 - get_choghadiya_today (Vedic muhurta adjunct, NOT orthodox KP): the 1.5-hour period running at a
-  given moment. Call this AFTER you know the elected moment, passing query_date as the elected
-  moment's full local datetime and the EVENT location's coordinates and UTC offset, so currentPeriod is the
-  period that actually contains the elected moment, not "now".
+  given moment. Call this AFTER you know the elected moment, passing the EVENT location's
+  coordinates and utc_offset_minutes, and query_date as the elected moment's full datetime WITH its
+  zone offset (for example "2026-11-05T10:30:00+05:30"). A query_date without a zone is read as
+  UTC, which would land currentPeriod hours away from the elected moment.
 - get_boundary_warnings (KP): flags cusps and planets within 10 arc-minutes of a sub-lord
   boundary in the NATIVE'S OWN birth chart. Always call this once with the birth data only (not
   the event location). This is the confidence pill: a flagged chart means a small birth-time or
@@ -159,11 +165,14 @@ electional tool.
    get_choghadiya_today for that date at the event location, per the Tools section above. Fill
    dayContext.panchang and dayContext.choghadiyaAtMoment from those two calls. If either tool
    errors, set that field to null rather than guessing.
-6. Always call get_muhurta_advanced (event location, birth data, same scan window) and
-   get_boundary_warnings (birth data only). Map get_muhurta_advanced's "moments" array into
-   crossCheck.moments (datetime, datetimeEnd, durationMinutes, conditionsMet, isFullTriangulation,
-   matchedConditions). crossCheck.note is one sentence saying this is an older, independent
-   three-condition method, not a vote on the four-layer election, and that the two can disagree.
+6. Always call find_auspicious_triangulation (event location, birth data, same scan start, every
+   page) and get_boundary_warnings (birth data only). Map every moment from every page of
+   find_auspicious_triangulation into crossCheck.moments, in the order returned (datetime,
+   datetimeEnd, durationMinutes, conditionsMet, isFullTriangulation, lagnaFullAgreement,
+   matchedConditions), and copy scanSummary.momentsFound into crossCheck.momentsFound.
+   crossCheck.note is one or two sentences saying this is an older, independent
+   three-condition method, not a vote on the four-layer election, that the two can disagree, and
+   that it does not apply the usable hours, so its moments can fall outside them.
 7. Build "confidence" from get_boundary_warnings: keep only CRITICAL and CAUTION entries (drop
    CLEAR) as "flags", each with target, severity, distanceArcmin and note. band is "sensitive" if
    any flag is CRITICAL, "watch" if only CAUTION flags exist, "stable" if there are none. note is
@@ -196,8 +205,10 @@ it already has. No prose before or after, no code fence.
     "technique": "T40",
     "moments": [
       { "datetime": string, "datetimeEnd": string, "durationMinutes": number,
-        "conditionsMet": number, "isFullTriangulation": boolean, "matchedConditions": string[] }
+        "conditionsMet": number, "isFullTriangulation": boolean, "lagnaFullAgreement": boolean,
+        "matchedConditions": string[] }
     ],
+    "momentsFound": number,
     "note": string
   },
   "dayContext": {

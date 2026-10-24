@@ -12,7 +12,7 @@ side. So a coach and their client can see the mechanism, not only a verdict.
 
 | Tool | What it contributes | System |
 |---|---|---|
-| `run_pre_verdict_audit` | Audits chart integrity: sub-lord boundary, combustion, planetary war and vargottama strength. Folds them into one confidence band and modifier. Runs first | KP |
+| `run_pre_verdict_audit` | Audits chart integrity. Only the sub-lord boundary flags move its confidence band and modifier (a Lumin convention). Combustion, planetary war and vargottama are reported and move nothing. Runs first | Cross-system composite: KP boundaries and combustion, Parashari war and vargottama |
 | `get_boundary_warnings` | Flags every cusp and planet within 10 arc minutes of a sub-lord boundary | KP |
 | `analyze_natal_promise` | The promise gate across every defined life event. This app reads the "Career / Job Start" row. **Paged**. Nothing states a verdict before it returns | KP |
 | `get_career_cusp_panel` | The five career cusps (2, 6, 7, 10, 11) against the four negation cusps (1, 5, 9, 12), summed into a career balance band | KP |

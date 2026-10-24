@@ -100,8 +100,9 @@ export function PrakritiCard({
             Constitution drivers
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            The planets shaping your dosha mix, paired with their six-fold Shadbala
-            strength. A strong planet is a firm driver; a weak one is a softer lean.
+            The planets shaping your dosha mix, paired with their score on the Lumin
+            strength index (Lumin&apos;s own 0 to 100 index, not the classical Shadbala). A
+            strong planet is a firm driver; a weak one is a softer lean.
           </p>
           <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
             {drivers.map((driver, i) => (

@@ -12,8 +12,8 @@ import { ALLOWED_TOOLS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompt"
 import type { MatchResponse, PersonInput, ResolvedMatch, ResolvedPerson } from "@/lib/types";
 
 export const runtime = "nodejs";
-/** The loading copy promises 50 to 150 seconds for an 11-call read, so this has room above that. */
-export const maxDuration = 180;
+/** The loading copy promises 90 to 240 seconds for a 15-call read, so this has room above that. */
+export const maxDuration = 300;
 
 const ROUTE = "/api/match";
 
@@ -101,8 +101,26 @@ function validateShape(data: MatchResponse): string | null {
   if (!s.kpSevenFactor || !Array.isArray(s.kpSevenFactor.factors) || s.kpSevenFactor.factors.length !== 7) {
     return "systems.kpSevenFactor must carry exactly 7 factors";
   }
+  if (s.ashtaKoota.groom !== "personA" && s.ashtaKoota.groom !== "personB") {
+    return "systems.ashtaKoota.groom must name whose chart was scored as the groom";
+  }
   if (!s.kpCuspal || !Array.isArray(s.kpCuspal.factors) || s.kpCuspal.factors.length !== 6) {
     return "systems.kpCuspal must carry exactly 6 factors";
+  }
+  // Five promise rows from get_couple_csl_factors, then the DASHA_SYNC row from
+  // get_couple_dasha_sync. Anything else means a step tool was skipped.
+  const sources = s.kpCuspal.factors.map((f) => f?.source);
+  if (
+    sources.slice(0, 5).some((src) => src !== "get_couple_csl_factors") ||
+    sources[5] !== "get_couple_dasha_sync"
+  ) {
+    return "systems.kpCuspal.factors must be five get_couple_csl_factors rows then the get_couple_dasha_sync row";
+  }
+  if (!Array.isArray(s.kpCuspal.dashaSyncWindows)) {
+    return "systems.kpCuspal.dashaSyncWindows is missing (an empty array is valid)";
+  }
+  if (!Array.isArray(s.kpCuspal.prerequisites) || typeof s.kpCuspal.prerequisiteNote !== "string") {
+    return "systems.kpCuspal is missing the individual prerequisites and their note";
   }
 
   if (!data.doshas?.manglik?.personA || !data.doshas?.manglik?.personB) {
@@ -113,6 +131,23 @@ function validateShape(data: MatchResponse): string | null {
   }
   if (typeof data.doshas.kpDissent !== "string" || !data.doshas.kpDissent.trim()) {
     return "response is missing doshas.kpDissent";
+  }
+
+  const km = data.kpMarriage;
+  if (!km?.punarphoo?.personA || !km.punarphoo.personB) {
+    return "response is missing kpMarriage.punarphoo for both people";
+  }
+  if (typeof km.punarphoo.personA.present !== "boolean" || typeof km.punarphoo.personB.present !== "boolean") {
+    return "kpMarriage.punarphoo must say present or not for both people";
+  }
+  for (const [label, d] of [["personA", km.discord?.personA], ["personB", km.discord?.personB]] as const) {
+    if (!d || !Array.isArray(d.fruitfulAgents) || !Array.isArray(d.criticalAgents)) {
+      return `response is missing kpMarriage.discord.${label}`;
+    }
+  }
+  // The discord tool ships its own disclaimer; it travels in the payload.
+  if (typeof km.discord.disclaimer !== "string" || !km.discord.disclaimer.trim()) {
+    return "response is missing kpMarriage.discord.disclaimer";
   }
 
   if (!data.partnerProfile?.forPersonA || !data.partnerProfile?.forPersonB) {
@@ -154,10 +189,11 @@ export async function POST(req: NextRequest) {
       allowedTools: ALLOWED_TOOLS,
       system: buildSystemPrompt(),
       user: buildUserPrompt(input),
-      // 11 tool calls across two charts, three scored systems, doshas, spouse
-      // characteristics in both directions and a disagreement drawer. We
-      // stream, so a large budget costs nothing when the answer is shorter.
-      maxTokens: 24000,
+      // 15 tool calls across two charts, three scored systems, doshas, Punarphoo,
+      // the discord rule, spouse characteristics in both directions and a
+      // disagreement drawer. We stream, so a large budget costs nothing when
+      // the answer is shorter.
+      maxTokens: 40000,
       // A cross-system investigation, not a lookup. Agentic runs want xhigh.
       effort: "xhigh",
       signal: req.signal,

@@ -8,6 +8,7 @@ import { VitalityCard } from "@/components/VitalityCard";
 import { SystemRiskCard } from "@/components/SystemRiskCard";
 import { OrganPanelCard } from "@/components/OrganPanelCard";
 import { TimelineCard } from "@/components/TimelineCard";
+import { ParadigmPanelCard } from "@/components/ParadigmPanelCard";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import type { AnalysisResponseHydrated } from "@/lib/types";
 
@@ -50,7 +51,8 @@ const LOADING_STEPS = [
   "Casting the KP chart and running the pre-verdict integrity audit",
   "Analyzing 6th, 8th, and 12th cusp sub-lords plus bhadhakasthana",
   "Scoring 8 chronic-disease signatures and the body-region panel",
-  "Classifying accident windows, lifespan band, and Saturn cycle",
+  "Classifying accident and surgery windows, lifespan band, and Saturn cycle",
+  "Reading chronic illness across KP, Parashari, Jaimini and Tajik",
   "Mapping vulnerabilities across eight body systems",
   "Aligning peak windows with Vimshottari dasha and transits",
 ];
@@ -69,9 +71,10 @@ function LoadingState() {
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           A full constitutional health analysis runs through a 7-step KP protocol,
-          typically 60 to 150 seconds. Around 31 Lumin tool calls map planetary placements
-          to body systems, watch-decade disease panels, the body-region affliction panel,
-          accident windows, the Saturn cycle, and a qualitative lifespan band.
+          typically several minutes. Lumin tool calls map planetary placements to body
+          systems, watch-decade disease panels, the body-region affliction panel, accident
+          and surgery windows, the Saturn cycle, a reading across schools, and a
+          qualitative lifespan band.
         </p>
         <ul className="mt-5 space-y-1.5 text-sm text-muted-foreground">
           {LOADING_STEPS.map((step, i) => (
@@ -129,6 +132,20 @@ function ResultsSection({ result }: { result: AnalysisResponseHydrated }) {
 
       <div className="mt-12">
         <h2 className="font-serif text-2xl tracking-tight text-foreground md:text-3xl">
+          Across schools
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          The same question read by KP, three later KP schools, Parashari, Jaimini and
+          Tajik, side by side and never averaged.
+        </p>
+
+        <div className="mt-6">
+          <ParadigmPanelCard panel={result.paradigm_panel} />
+        </div>
+      </div>
+
+      <div className="mt-12">
+        <h2 className="font-serif text-2xl tracking-tight text-foreground md:text-3xl">
           Timing & calendar
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -139,6 +156,8 @@ function ResultsSection({ result }: { result: AnalysisResponseHydrated }) {
         <div className="mt-6">
           <TimelineCard
             chronicity={result.chronicity_profile}
+            recoveryOutlook={result.recovery_outlook}
+            surgeryPromise={result.surgery_promise}
             saturn={result.saturn_cycle}
             surgery={result.surgery_windows}
             recovery={result.recovery_periods}

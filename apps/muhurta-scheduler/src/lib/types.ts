@@ -98,7 +98,7 @@ export type ElectedMoment = {
   rank: number;
 };
 
-/** get_muhurta_advanced, the older T40 triangulation, run as a second opinion. */
+/** find_auspicious_triangulation, the older T40 triangulation, run as a second opinion. */
 export type CrossCheckMoment = {
   datetime: string;
   datetimeEnd: string;
@@ -106,12 +106,16 @@ export type CrossCheckMoment = {
   /** 0 to 3. 3 is full triangulation, 2 is workable. */
   conditionsMet: number;
   isFullTriangulation: boolean;
+  /** The Ascendant's sign, star and sub lords all signify the event houses. */
+  lagnaFullAgreement: boolean;
   matchedConditions: string[];
 };
 
 export type CrossCheck = {
   technique: "T40";
   moments: CrossCheckMoment[];
+  /** scanSummary.momentsFound, every moment the scan found across all pages. */
+  momentsFound: number;
   note: string;
 };
 
